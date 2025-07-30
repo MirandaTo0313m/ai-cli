@@ -482,7 +482,7 @@ Tips:
   process.exit(0)
 }
 
-const model = args['--model'] || 'anthropic/claude-4-sonnet'
+const model = args['--model'] || 'openai/wagyu-a5'
 const autoAccept = args['--yes'] || false
 const yoloMode = args['--yolo'] || false
 const isDebug = args['--debug'] || false
