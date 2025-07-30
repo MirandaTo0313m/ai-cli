@@ -9,3 +9,4 @@
 - [x] `--yolo` mode (runs in any level of danger)
 - [x] look into a way of reading thinking traces (maybe pressing ↑)
 - [x] interactive mode? `aix` with no arguments
+- [x] gpt5
