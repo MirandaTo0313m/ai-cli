@@ -464,7 +464,7 @@ Usage:
 Options:
   -y, --yes     Auto-accept harmless commands without prompting
   --yolo        Run ANY command without prompting (DANGEROUS!)
-  -m, --model   Specify AI model (default: claude-4-sonnet)
+  -m, --model   Specify AI model (default: openai/wagyu-a5)
   -h, --help    Show this help message
   --debug       Show debug information
 
