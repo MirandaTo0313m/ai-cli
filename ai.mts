@@ -43,16 +43,30 @@ Examples:
     process.exit(0)
   }
 
-  const message = args._.join(' ')
+  let message = args._.join(' ')
+  
   if (!message) {
-    console.error('Error: Please provide a message')
-    console.error('Usage: ai <message>')
-    process.exit(1)
+    if (!process.stdin.isTTY) {
+      const chunks: string[] = []
+      for await (const chunk of process.stdin) {
+        chunks.push(chunk.toString())
+      }
+      message = chunks.join('').trim()
+    }
+    
+    if (!message) {
+      console.error('Error: Please provide a message')
+      console.error('Usage: ai <message>')
+      process.exit(1)
+    }
   }
 
   const model = args['--model'] || 'openai/gpt-oss-120b'
+  const isPiped = !process.stdout.isTTY
 
-  console.log(gray(`ai ${version} [${model}]`))
+  if (!isPiped) {
+    console.log(gray(`ai ${version} [${model}]`))
+  }
   
   try {
     const result = await streamText({
@@ -63,7 +77,10 @@ Examples:
     for await (const chunk of result.textStream) {
       process.stdout.write(chunk)
     }
-    console.log()
+    
+    if (!isPiped) {
+      console.log()
+    }
   } catch (error) {
     console.error('Error:', error instanceof Error ? error.message : 'Unknown error')
     process.exit(1)
