@@ -1,6 +1,6 @@
 # ai-cli
 
-AI CLI using OpenAI's open source model.
+AI CLI using Vercel AI Gateway
 
 ## Installation
 
@@ -10,35 +10,91 @@ npm install -g ai-cli
 
 ## Setup
 
-Set your AI Gateway API key in your shell configuration:
-
 ```bash
-# Add to ~/.zshrc or ~/.bashrc
-export AI_GATEWAY_API_KEY=your-api-key
+ai init
 ```
 
-Get your API key at https://vercel.com/docs/ai-gateway
+Get your API key from [Vercel AI Gateway](https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai%2Fapi-keys&title=Go+to+AI+Gateway)
 
 ## Usage
 
 ```bash
-ai "whats up bro"
-ai hello
-echo "explain this code" | ai
-ai -m openai/gpt-5 "who is rauchg"
+ai                           # interactive mode
+ai "hello"                   # single message
+ai -m gpt-5 "hello"          # use specific model
+ai -l                        # list available models
+echo "explain this" | ai     # pipe input
 ```
 
 ## Options
 
-- `-m, --model` - Specify AI model (default: openai/gpt-5)
-- `-h, --help` - Show help message
+- `-m, --model` - model (default: anthropic/claude-sonnet-4.5)
+- `-l, --list` - list available models
+- `-h, --help` - help
+
+## Interactive Mode
+
+Type `ai` to enter interactive mode with file access and chat history.
+
+### Commands
+
+**Chat**
+- `/new` - start new chat
+- `/chats` - list saved chats (paginated)
+- `/chat <n>` - load chat by number
+- `/delete` - delete current chat
+- `/purge` - delete all chats
+- `/clear`, `/c` - clear screen and history
+
+**Context**
+- `/context` - show token usage
+- `/compress` - compress chat history
+- `/summary` - view compressed summary
+- `/usage` - show chat stats and cost
+
+**Models**
+- `/list`, `/l` - select model (with search)
+- `/model`, `/m` - show current model
+
+**Settings**
+- `/permission` - set tool mode (ask/yolo)
+- `/init`, `/i` - setup api key
+- `/credits` - show balance
+- `/storage` - show storage info
+- `/help`, `/h` - show commands
+
+**Exit**
+- `exit` or `quit`
+
+## File Tools
+
+The AI can interact with files in your current directory:
+
+- read files
+- write/create files
+- create folders
+- rename/move files
+- delete files
+- copy files
+- search in files
+- find files by pattern
+- get file info
+
+Use `/permission` to switch between:
+- **ask** (default) - confirms before write/delete operations
+- **yolo** - no confirmations (use with caution)
 
 ## Switching Models
 
-You can use any model available through Vercel AI Gateway by using the `-m` flag:
+Supports fuzzy matching:
 
 ```bash
-ai -m claude-4-sonnet "who am i"
-ai -m openai/gpt-4o "count to 3"
-ai -m anthropic/claude-4.1-opus "spend my money"
+ai -m claude-4       # → anthropic/claude-sonnet-4
+ai -m gpt-5          # → openai/gpt-5
+ai -m sonnet         # → finds a sonnet model
 ```
+
+## Storage
+
+- Config: `~/.airc`
+- Chats: `~/.ai-chats/`

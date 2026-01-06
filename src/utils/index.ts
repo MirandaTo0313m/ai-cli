@@ -15,7 +15,8 @@ Usage:
   ai -m <model> <message>
 
 Options:
-  -m, --model   Specify AI model (default: openai/gpt-5)
+  -m, --model   Specify AI model (default: anthropic/claude-sonnet-4.5)
+  -l, --list    List available models
   -h, --help    Show this help message
 
 Commands:
@@ -23,6 +24,8 @@ Commands:
 
 Examples:
   ai "whats up bro"
-  ai -m openai/gpt-5 "hello world"
+  ai -m claude-opus-4.5 "hello"
+  ai -m gpt-5.2 "hello"
+  ai -l
   ai hello`);
 }

@@ -1,6 +1,7 @@
-import { streamText } from 'ai';
-import ora from 'ora';
-import { dim, gray } from 'yoctocolors';
+import { stepCountIs, streamText } from 'ai';
+import { gray } from 'yoctocolors';
+import { fileTools } from '../tools/index.js';
+import { createSpinner } from '../utils/spinner.js';
 
 interface ChatOptions {
   message: string;
@@ -10,28 +11,31 @@ interface ChatOptions {
 }
 
 export async function chatCommand(options: ChatOptions): Promise<void> {
-  const { message, model = 'openai/gpt-5', isPiped, version } = options;
+  const {
+    message,
+    model = 'anthropic/claude-sonnet-4.5',
+    isPiped,
+    version,
+  } = options;
 
   if (!isPiped) {
     console.log(gray(`ai ${version} [${model}]`));
   }
 
-  try {
-    let thinkingBuffer = '';
-    let hasSeenContent = false;
-    let spinner: ReturnType<typeof ora> | null = null;
+  const spinner = !isPiped ? createSpinner() : null;
+  let hasSeenContent = false;
+  let reasoning = '';
 
-    if (!isPiped) {
-      spinner = ora({
-        text: dim('Thinking...'),
-        color: 'gray',
-        spinner: 'dots',
-      }).start();
-    }
+  try {
+    spinner?.start('thinking...');
 
     const result = streamText({
       model: model,
+      system:
+        'You are a helpful CLI assistant. Output plain text only - no markdown formatting, no emojis. Be concise.',
       prompt: message,
+      tools: fileTools,
+      stopWhen: stepCountIs(5),
       providerOptions: {
         openai: {
           reasoningEffort: 'high',
@@ -46,41 +50,26 @@ export async function chatCommand(options: ChatOptions): Promise<void> {
 
     for await (const part of result.fullStream) {
       if (part.type === 'reasoning-delta' && part.text) {
-        thinkingBuffer += part.text;
-
-        if (spinner && thinkingBuffer) {
-          const cleaned = thinkingBuffer.replace(/\s+/g, ' ').trim();
-          const termWidth = process.stdout.columns || 80;
-          const maxWidth = termWidth - 4;
-
-          if (cleaned.length <= maxWidth) {
-            spinner.text = dim(cleaned);
-          } else {
-            const start = Math.max(0, cleaned.length - maxWidth);
-            const window = cleaned.substring(start, start + maxWidth);
-            spinner.text = dim(window);
-          }
-        }
+        reasoning += part.text;
+        spinner?.update(reasoning);
+      } else if (part.type === 'tool-call') {
+        spinner?.update(`${part.toolName}...`);
       } else if (part.type === 'text-delta') {
         if (!hasSeenContent) {
           hasSeenContent = true;
-          if (spinner) {
-            spinner.stop();
-            spinner = null;
-          }
+          spinner?.stop();
         }
         process.stdout.write(part.text);
       }
     }
 
-    if (spinner) {
-      spinner.stop();
-    }
+    if (!hasSeenContent) spinner?.stop();
 
     if (!isPiped) {
       console.log();
     }
   } catch (error) {
+    spinner?.stop();
     if (error instanceof Error && error.message.includes('authentication')) {
       console.error('invalid key. run: ai init');
     } else {
