@@ -1,7 +1,7 @@
 import arg from 'arg';
 import { chatCommand } from './commands/chat.js';
 import { initCommand } from './commands/init.js';
-import { interactiveCommand } from './commands/interactive.js';
+import { inkCommand } from './commands/ink.js';
 import { listModels } from './commands/models.js';
 import { getApiKey, getModel } from './config/index.js';
 import { readStdin, showHelp } from './utils/index.js';
@@ -59,7 +59,7 @@ async function main() {
       process.env.AI_GATEWAY_API_KEY = apiKey;
       globalThis.AI_SDK_LOG_WARNINGS = false;
       console.log();
-      await interactiveCommand({ model: savedModel || defaultModel, version });
+      await inkCommand({ model: savedModel || defaultModel, version });
     }
     return;
   }
@@ -87,7 +87,7 @@ async function main() {
 
     if (!message) {
       if (process.stdin.isTTY) {
-        await interactiveCommand({
+        await inkCommand({
           model,
           version,
         });

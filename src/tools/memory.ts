@@ -2,7 +2,6 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
 import { tool } from 'ai';
-import { dim } from 'yoctocolors';
 import { z } from 'zod';
 
 const memoryFile = path.join(os.homedir(), '.ai-memories');
@@ -34,28 +33,25 @@ export const memory = tool({
       if (!fact) return { error: 'No fact provided' };
       const clean = fact.trim().replace(/^-\s*/, '');
       if (memories.includes(clean)) {
-        process.stdout.write(`\r\x1b[K${dim('remembered.')}\n`);
-        return { success: true, silent: true };
+        return { message: 'remembered', silent: true };
       }
       memories.push(clean);
       saveMemories(memories);
-      process.stdout.write(`\r\x1b[K${dim('remembered.')}\n`);
-      return { success: true, silent: true };
+      return { message: 'remembered', silent: true };
     }
 
     if (action === 'list') {
       if (memories.length === 0) {
-        return { memories: [], message: 'No saved memories' };
+        return { memories: [], output: 'No saved memories' };
       }
-      return { memories, total: memories.length };
+      return { memories, output: memories.map(m => `- ${m}`).join('\n') };
     }
 
     if (action === 'clear') {
       if (fs.existsSync(memoryFile)) {
         fs.unlinkSync(memoryFile);
       }
-      process.stdout.write(`\r\x1b[K${dim('memories cleared.')}\n`);
-      return { success: true, silent: true };
+      return { message: 'memories cleared', silent: true };
     }
 
     return { error: 'Unknown action' };

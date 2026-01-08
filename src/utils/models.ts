@@ -60,5 +60,6 @@ export async function resolveModel(query: string): Promise<string> {
     return scored[0].model.id;
   }
 
-  return query;
+  console.error(`no model found for "${query}"`);
+  process.exit(1);
 }

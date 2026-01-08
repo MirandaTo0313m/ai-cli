@@ -23,10 +23,14 @@
   "devDependencies": {
     "@biomejs/biome": "2.1.4",
     "@types/node": "^24.1.0",
+    "@types/react": "^19.2.7",
     "ai": "6.0.6",
     "arg": "^5.0.2",
     "esbuild": "^0.25.8",
+    "ink": "npm:@jrichman/ink@6.4.6",
+    "ink-text-input": "^6.0.0",
     "rc9": "^2.1.2",
+    "react": "^19.2.3",
     "typescript": "^5.8.3",
     "yoctocolors": "^2.1.1",
     "zod": "^4.1.8"

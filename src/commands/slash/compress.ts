@@ -1,24 +1,19 @@
-import { dim } from 'yoctocolors';
 import { saveChat } from '../../config/chats.js';
 import { summarizeHistory } from '../../utils/context.js';
 import type { CommandHandler } from './types.js';
 
 export const compress: CommandHandler = async (ctx) => {
   if (!ctx.chat) {
-    console.log(dim('no active chat\n'));
-    return undefined;
+    return { output: 'no active chat' };
   }
   if (ctx.history.length < 3) {
-    console.log(dim('not enough history to compress\n'));
-    return undefined;
+    return { output: 'not enough history to compress' };
   }
 
-  console.log(dim('compressing...'));
   const summary = await summarizeHistory(ctx.history);
 
   if (!summary) {
-    console.log(dim('compression failed\n'));
-    return undefined;
+    return { output: 'compression failed' };
   }
 
   ctx.history.length = 0;
@@ -30,9 +25,11 @@ export const compress: CommandHandler = async (ctx) => {
   ctx.chat.tokens = estimatedTokens;
   saveChat(ctx.chat);
 
-  console.log(dim(`compressed to ~${estimatedTokens.toLocaleString()} tokens`));
-  console.log(dim('type /summary to view\n'));
-
-  return { tokens: estimatedTokens, cost: ctx.cost, summary };
+  return {
+    output: `compressed to ~${estimatedTokens.toLocaleString()} tokens\ntype /summary to view`,
+    tokens: estimatedTokens,
+    cost: ctx.cost,
+    summary,
+  };
 };
 

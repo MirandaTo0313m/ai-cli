@@ -1,5 +1,4 @@
 import { tool } from 'ai';
-import { dim } from 'yoctocolors';
 import { z } from 'zod';
 import { getProcesses, killManagedProcess } from '../utils/processes.js';
 
@@ -25,11 +24,9 @@ export const killProcess = tool({
     const killed = killManagedProcess(targetPid);
 
     if (killed) {
-      process.stdout.write(`\r\x1b[K${dim(`killed process ${targetPid}`)}\n`);
-      return { success: true, pid: targetPid, silent: true };
+      return { message: `killed process ${targetPid}`, pid: targetPid, silent: true };
     }
 
     return { error: `Process ${targetPid} not found` };
   },
 });
-

@@ -42,40 +42,71 @@ Type `ai` to enter interactive mode with file access and chat history.
 
 **Chat**
 - `/new` - start new chat
-- `/chats` - list saved chats (paginated)
+- `/chats` - list saved chats
 - `/chat <n>` - load chat by number
 - `/delete` - delete current chat
 - `/purge` - delete all chats
-- `/clear`, `/c` - clear screen and history
+- `/clear` - clear screen and history
+
+**Files**
+- `/copy` - copy last response to clipboard
+- `/rollback` - view/undo file changes
+- `/diff` - view recent file changes
 
 **Context**
-- `/context` - show token usage
+- `/context` - show token usage and loaded context files
 - `/compress` - compress chat history
-- `/summary` - view compressed summary
 - `/usage` - show chat stats and cost
 
 **Models**
-- `/list`, `/l` - select model (with search)
-- `/model`, `/m` - show current model
+- `/list` - select model (with search)
+- `/model` - show current model
 
 **Processes**
-- `/processes`, `/ps` - manage background processes
+- `/processes` - manage background processes
 
 **Memory**
 - `/memory` - view saved memories
 - `/memory clear` - clear all memories
 
-**Undo**
-- `/undo`, `/u` - undo last file change
-
 **Settings**
-- `/init`, `/i` - setup api key
+- `/alias` - manage command shortcuts
+- `/settings` - configure preferences
+- `/init` - setup api key
 - `/credits` - show balance
 - `/storage` - show storage info
-- `/help`, `/h` - show commands
+- `/version` - show version
+- `/help` - show commands
 
 **Exit**
 - `exit` or `quit`
+
+## Context Files
+
+The CLI automatically loads context files into the AI's system prompt:
+
+- `CLAUDE.md` - project instructions
+- `CLAUDE.local.md` - local instructions (not committed)
+- `AGENTS.md` - agent-specific instructions
+- `.cursorrules` - cursor rules
+- `.cursor/rules/*.md` - cursor rule files (supports globs and alwaysApply)
+- `~/CLAUDE.md` - global instructions
+
+Use `/context` to see which files are loaded.
+
+## Aliases
+
+Create custom command shortcuts:
+
+```bash
+/alias h help      # /h → /help
+/alias c copy      # /c → /copy
+/alias m model     # /m → /model
+/alias -d h        # remove alias
+/alias             # list all aliases
+```
+
+Aliases are stored in `~/.airc` and shown in `/help`.
 
 ## Tools
 

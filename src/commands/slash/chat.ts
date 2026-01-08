@@ -1,12 +1,10 @@
-import { dim } from 'yoctocolors';
 import { type Chat, listChats, searchChats } from '../../config/chats.js';
 import type { CommandHandler, CommandResult } from './types.js';
 
 export const chat: CommandHandler = (_ctx, args) => {
   const query = args?.trim() || '';
   if (!query) {
-    console.log(dim('usage: /chat <number or search>\n'));
-    return;
+    return { output: 'usage: /chat <number or search>' };
   }
 
   const num = Number.parseInt(query, 10);
@@ -21,11 +19,8 @@ export const chat: CommandHandler = (_ctx, args) => {
   }
 
   if (!found) {
-    console.log(dim('chat not found\n'));
-    return;
+    return { output: 'chat not found' };
   }
-
-  process.stdout.write('\x1b[2J\x1b[H');
 
   const result: CommandResult = {
     chat: found,
@@ -33,6 +28,7 @@ export const chat: CommandHandler = (_ctx, args) => {
     tokens: found.tokens || 0,
     cost: found.cost || 0,
     clearHistory: true,
+    clearScreen: true,
   };
 
   return result;
@@ -41,17 +37,19 @@ export const chat: CommandHandler = (_ctx, args) => {
 export function restoreHistory(
   ctx: { chat: { messages: { role: string; content: string }[] } },
   history: { role: string; content: unknown }[],
-) {
+): { user: string[]; assistant: string[] } {
+  const restored = { user: [] as string[], assistant: [] as string[] };
   for (const msg of ctx.chat.messages) {
     if (msg.role === 'user') {
       history.push({ role: 'user', content: msg.content });
-      console.log(dim(`› ${msg.content}`));
+      restored.user.push(msg.content);
     } else if (msg.role === 'assistant') {
       history.push({
         role: 'assistant',
         content: [{ type: 'text', text: msg.content }],
       });
-      console.log(`${msg.content}\n`);
+      restored.assistant.push(msg.content);
     }
   }
+  return restored;
 }

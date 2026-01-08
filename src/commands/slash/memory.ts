@@ -1,7 +1,6 @@
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { dim } from 'yoctocolors';
 import type { CommandHandler } from './types.js';
 
 const memoryFile = path.join(os.homedir(), '.ai-memories');
@@ -21,25 +20,21 @@ export const memory: CommandHandler = (_ctx, args) => {
   if (action === 'clear') {
     if (fs.existsSync(memoryFile)) {
       fs.unlinkSync(memoryFile);
-      console.log(dim('\nmemories cleared\n'));
-    } else {
-      console.log(dim('\nno memories to clear\n'));
+      return { output: 'memories cleared' };
     }
-    return undefined;
+    return { output: 'no memories to clear' };
   }
 
   const memories = loadMemories();
 
   if (memories.length === 0) {
-    console.log(dim('\nno saved memories'));
-    console.log(dim('say "remember X" to save facts\n'));
-    return undefined;
+    return { output: 'no saved memories\nsay "remember X" to save facts' };
   }
 
-  console.log(dim(`\nmemories (${memories.length}):`));
+  const lines = [`memories (${memories.length}):`];
   for (const mem of memories) {
-    console.log(dim(`  - ${mem}`));
+    lines.push(`  - ${mem}`);
   }
-  console.log(dim('\nuse /memory clear to delete all\n'));
-  return undefined;
+  lines.push('\nuse /memory clear to delete all');
+  return { output: lines.join('\n') };
 };

@@ -21,7 +21,9 @@ export interface CommandResult {
   cost?: number;
   rl?: readline.Interface;
   clearHistory?: boolean;
+  clearScreen?: boolean;
   summary?: string;
+  output?: string;
 }
 
 export type CommandHandler = (
