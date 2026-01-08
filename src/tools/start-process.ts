@@ -1,5 +1,4 @@
 import { tool } from 'ai';
-import { dim } from 'yoctocolors';
 import { z } from 'zod';
 import { log as debug } from '../utils/debug.js';
 import { startManagedProcess, getProcessLogs } from '../utils/processes.js';
@@ -29,8 +28,6 @@ export const startProcess = tool({
     }
 
     const info = url ? `${command} → ${url}` : command;
-    process.stdout.write(`\r\x1b[K${dim(`${info} (pid: ${proc.pid})`)}\n`);
-
-    return { success: true, pid: proc.pid, url, silent: true };
+    return { message: `${info} (pid: ${proc.pid})`, pid: proc.pid, url, silent: true };
   },
 });

@@ -17,8 +17,14 @@ await build({
   external: [],
   minify: true,
   sourcemap: false,
+  banner: {
+    js: `import { createRequire } from 'module'; const require = createRequire(import.meta.url);`,
+  },
   define: {
     __VERSION__: JSON.stringify(packageJson.version),
+  },
+  alias: {
+    'react-devtools-core': './src/stubs/devtools.js',
   },
 });
 

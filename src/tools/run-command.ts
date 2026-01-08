@@ -1,8 +1,8 @@
 import { spawn } from 'node:child_process';
 import { tool } from 'ai';
-import { dim } from 'yoctocolors';
 import { z } from 'zod';
 import { log as debug } from '../utils/debug.js';
+import { confirm } from './confirm.js';
 
 const cwd = process.cwd();
 const TIMEOUT = 60000;
@@ -21,8 +21,12 @@ export const runCommand = tool({
       return { error: 'use startProcess for long-running commands' };
     }
 
+    const ok = await confirm(`run: ${command}?`);
+    if (!ok) {
+      return { message: 'cancelled', silent: true };
+    }
+
     debug(`runCommand: ${command}`);
-    process.stdout.write(`\r\x1b[K${dim(`$ ${command}`)}\n`);
 
     return new Promise((resolve) => {
       const chunks: string[] = [];
@@ -61,26 +65,22 @@ export const runCommand = tool({
         clearTimeout(totalTimeout);
 
         const output = chunks.join('').trim();
-        if (output) console.log(dim(output));
+        const result = output ? `$ ${command}\n${output}` : `$ ${command}`;
 
         if (killed) {
-          console.log(dim('timed out.'));
-          resolve({ error: 'Command timed out', output });
+          resolve({ error: 'Command timed out', output: result });
         } else if (code === 0) {
-          console.log(dim('done.'));
-          resolve({ success: true, output, silent: true });
+          resolve({ output: result, silent: true });
         } else {
-          console.log(dim(`exit ${code}`));
-          resolve({ error: `Exit code ${code}`, output });
+          resolve({ output: result, exitCode: code });
         }
       });
 
       proc.on('error', (err) => {
         clearInterval(checkInactivity);
         clearTimeout(totalTimeout);
-        resolve({ error: err.message });
+        resolve({ error: err.message, output: `$ ${command}` });
       });
     });
   },
 });
-

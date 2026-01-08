@@ -80,7 +80,9 @@ export const listDirectory = tool({
       const fullPath = path.resolve(dirPath);
       const ignored = loadGitignore(fullPath);
       const maxDepth = Math.min(depth, 5);
-      const tree = buildTree(fullPath, ignored, '', 0, maxDepth).join('\n');
+      const lines = buildTree(fullPath, ignored, '', 0, maxDepth);
+      const root = path.basename(fullPath) || fullPath;
+      const tree = `${root}/\n${lines.join('\n')}`;
       return { tree, path: fullPath };
     } catch (e) {
       return { error: `Failed to list directory: ${(e as Error).message}` };

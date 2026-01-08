@@ -1,14 +1,10 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { tool } from 'ai';
-import { dim } from 'yoctocolors';
 import { z } from 'zod';
 import { log as debug } from '../utils/debug.js';
 import { saveWrite } from '../utils/undo.js';
-
-function fileLink(fullPath: string, name: string): string {
-  return `\x1b]8;;file://${fullPath}\x1b\\${name}\x1b]8;;\x1b\\`;
-}
+import { confirm } from './confirm.js';
 
 export const writeFile = tool({
   description:
@@ -21,8 +17,14 @@ export const writeFile = tool({
     debug(`writeFile: ${filePath} (${content.length} chars)`);
     try {
       const fullPath = path.resolve(filePath);
-
       const exists = fs.existsSync(fullPath);
+      const verb = exists ? 'update' : 'create';
+
+      const ok = await confirm(`${verb} ${filePath}?`);
+      if (!ok) {
+        return { message: 'cancelled', silent: true };
+      }
+
       saveWrite(fullPath);
 
       const dir = path.dirname(fullPath);
@@ -31,11 +33,7 @@ export const writeFile = tool({
       }
       fs.writeFileSync(fullPath, content, 'utf-8');
 
-      const link = fileLink(fullPath, filePath);
-      const verb = exists ? 'updated' : 'created';
-      process.stdout.write(`\r\x1b[K${dim(`done. ${verb} ${link}`)}\n`);
-
-      return { success: true, silent: true };
+      return { message: `${verb}d ${filePath}`, silent: true };
     } catch (e) {
       return { error: `Failed to write file: ${(e as Error).message}` };
     }

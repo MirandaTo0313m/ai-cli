@@ -1,4 +1,3 @@
-import { dim } from 'yoctocolors';
 import { GATEWAY_URL } from '../../utils/models.js';
 import type { CommandHandler } from './types.js';
 
@@ -15,12 +14,10 @@ export const credits: CommandHandler = async () => {
         total_used: string;
       };
       const balance = Number.parseFloat(data.balance).toFixed(2);
-      console.log(dim(`balance: $${balance}\n`));
-    } else {
-      console.log(dim('failed to fetch credits\n'));
+      return { output: `balance: $${balance}` };
     }
+    return { output: 'failed to fetch credits' };
   } catch {
-    console.log(dim('failed to fetch credits\n'));
+    return { output: 'failed to fetch credits' };
   }
-  return undefined;
 };

@@ -1,7 +1,6 @@
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { dim } from 'yoctocolors';
 import { listChats } from '../../config/chats.js';
 import type { CommandHandler } from './types.js';
 
@@ -33,14 +32,11 @@ export const storage: CommandHandler = () => {
   const chatsSize = getDirSize(chatsDir);
   const chatCount = listChats().length;
 
-  console.log(dim('\nstorage:'));
-  console.log(dim(`  config: ${configPath} (${formatBytes(configSize)})`));
-  console.log(
-    dim(
-      `  chats:  ${chatsDir}/ (${formatBytes(chatsSize)}, ${chatCount} chats)`,
-    ),
-  );
-  console.log(dim(`  total:  ${formatBytes(configSize + chatsSize)}`));
-  console.log(dim('\nuse /purge to delete all chats\n'));
-  return undefined;
+  const output = `storage:
+  config: ${configPath} (${formatBytes(configSize)})
+  chats:  ${chatsDir}/ (${formatBytes(chatsSize)}, ${chatCount} chats)
+  total:  ${formatBytes(configSize + chatsSize)}
+
+use /purge to delete all chats`;
+  return { output };
 };

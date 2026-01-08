@@ -1,9 +1,4 @@
-import { dim } from 'yoctocolors';
-import {
-  getProcesses,
-  killManagedProcess,
-  type ManagedProcess,
-} from '../../utils/processes.js';
+import { getProcesses, killManagedProcess } from '../../utils/processes.js';
 import type { CommandHandler } from './types.js';
 
 function formatUptime(startedAt: number): string {
@@ -13,98 +8,38 @@ function formatUptime(startedAt: number): string {
   return `${Math.floor(seconds / 3600)}h`;
 }
 
-async function selectProcess(
-  procs: ManagedProcess[],
-): Promise<'exit' | null> {
+export const processes: CommandHandler = (_ctx, args) => {
+  const procs = getProcesses();
+
   if (procs.length === 0) {
-    console.log(dim('no background processes\n'));
-    return 'exit';
+    return { output: 'no background processes' };
   }
 
-  let selected = 0;
-  let lastRenderedCount = 0;
+  const action = args?.trim().toLowerCase();
 
-  process.stdout.write('\x1b[?25l');
-
-  const clearLines = (count: number) => {
-    for (let i = 0; i < count; i++) {
-      process.stdout.write('\x1b[A\x1b[2K');
+  if (action === 'kill' || action === 'killall') {
+    for (const p of procs) {
+      killManagedProcess(p.pid);
     }
-  };
+    return { output: `killed ${procs.length} process(es)` };
+  }
 
-  const render = (initial = false) => {
-    if (!initial && lastRenderedCount > 0) {
-      clearLines(lastRenderedCount + 2);
+  const num = Number.parseInt(action || '', 10);
+  if (!Number.isNaN(num)) {
+    const proc = procs.find((p) => p.pid === num);
+    if (proc) {
+      killManagedProcess(proc.pid);
+      return { output: `killed process ${num}` };
     }
+    return { output: `process ${num} not found` };
+  }
 
-    console.log(dim('background processes (↑↓ navigate, k kill, esc exit):'));
-    for (let i = 0; i < procs.length; i++) {
-      const p = procs[i];
-      const prefix = i === selected ? '› ' : '  ';
-      const uptime = formatUptime(p.startedAt);
-      const line = `${p.pid} - ${p.command} (${uptime})`;
-      console.log(i === selected ? prefix + line : dim(prefix + line));
-    }
-    console.log();
-    lastRenderedCount = procs.length;
-  };
-
-  render(true);
-
-  return new Promise((resolve) => {
-    const stdin = process.stdin;
-    stdin.setRawMode?.(true);
-    stdin.resume();
-    stdin.setEncoding('utf8');
-
-    let done = false;
-
-    const cleanup = (result: 'exit' | null) => {
-      if (done) return;
-      done = true;
-      stdin.removeListener('data', onKey);
-      stdin.setRawMode?.(false);
-      process.stdout.write('\x1b[?25h');
-      resolve(result);
-    };
-
-    const onKey = (key: string) => {
-      if (done) return;
-
-      if (key === 'k' || key === 'K') {
-        const proc = procs[selected];
-        if (proc) {
-          killManagedProcess(proc.pid);
-          procs = getProcesses();
-          if (procs.length === 0) {
-            clearLines(lastRenderedCount + 2);
-            cleanup('exit');
-            return;
-          }
-          if (selected >= procs.length) selected = Math.max(0, procs.length - 1);
-          render();
-        }
-      } else if (key === '\x1b[A' && selected > 0) {
-        selected--;
-        render();
-      } else if (key === '\x1b[B' && selected < procs.length - 1) {
-        selected++;
-        render();
-      } else if (key === '\x1b' || key === '\x03') {
-        clearLines(lastRenderedCount + 2);
-        cleanup('exit');
-      }
-    };
-
-    stdin.on('data', onKey);
-  });
-}
-
-export const processes: CommandHandler = async (ctx) => {
-  ctx.rl.close();
-  const procs = getProcesses();
-  await selectProcess(procs);
-  const newRl = ctx.createRl();
-  return { rl: newRl };
+  const lines = ['background processes:'];
+  for (const p of procs) {
+    const uptime = formatUptime(p.startedAt);
+    lines.push(`  ${p.pid} - ${p.command} (${uptime})`);
+  }
+  lines.push('\n/processes <pid> to kill, /processes killall to kill all');
+  return { output: lines.join('\n') };
 };
 

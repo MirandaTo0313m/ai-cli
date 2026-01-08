@@ -7,10 +7,16 @@ export interface ChatMessage {
   content: string;
 }
 
+export interface DisplayMessage {
+  type: 'user' | 'assistant' | 'tool' | 'error' | 'info';
+  content: string;
+}
+
 export interface Chat {
   id: string;
   title: string;
   messages: ChatMessage[];
+  display?: DisplayMessage[];
   model: string;
   tokens: number;
   cost: number;
@@ -61,7 +67,7 @@ export function saveChat(chat: Chat): void {
       if (firstMsg.content.length > 50) chat.title += '...';
     }
   }
-  fs.writeFileSync(getChatPath(chat.id), JSON.stringify(chat, null, 2));
+  fs.writeFileSync(getChatPath(chat.id), JSON.stringify(chat));
 }
 
 export function loadChat(id: string): Chat | null {

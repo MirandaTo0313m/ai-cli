@@ -1,12 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { tool } from 'ai';
-import { dim } from 'yoctocolors';
 import { z } from 'zod';
-
-function fileLink(fullPath: string, name: string): string {
-  return `\x1b]8;;file://${fullPath}\x1b\\${name}\x1b]8;;\x1b\\`;
-}
 
 export const copyFile = tool({
   description: 'Copy a file to a new location.',
@@ -29,13 +24,9 @@ export const copyFile = tool({
       }
 
       fs.copyFileSync(fullSourcePath, fullDestPath);
-      const link = fileLink(fullDestPath, destPath);
-      process.stdout.write(`\r\x1b[K${dim(`done. copied to ${link}`)}\n`);
-
-      return { success: true, silent: true };
+      return { message: `copied to ${destPath}`, silent: true };
     } catch (e) {
       return { error: `Failed to copy: ${(e as Error).message}` };
     }
   },
 });
-

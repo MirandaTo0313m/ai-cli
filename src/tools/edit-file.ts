@@ -1,13 +1,20 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { tool } from 'ai';
-import { dim } from 'yoctocolors';
 import { z } from 'zod';
 import { log as debug } from '../utils/debug.js';
 import { saveWrite } from '../utils/undo.js';
+import { confirm } from './confirm.js';
 
-function fileLink(fullPath: string, name: string): string {
-  return `\x1b]8;;file://${fullPath}\x1b\\${name}\x1b]8;;\x1b\\`;
+function shortDiff(oldText: string, newText: string): string {
+  const oldLines = oldText.split('\n').slice(0, 5);
+  const newLines = newText.split('\n').slice(0, 5);
+  const lines: string[] = [];
+  for (const line of oldLines) lines.push(`- ${line}`);
+  for (const line of newLines) lines.push(`+ ${line}`);
+  const more = Math.max(oldText.split('\n').length, newText.split('\n').length) - 5;
+  if (more > 0) lines.push(`  ... ${more} more lines`);
+  return lines.join('\n');
 }
 
 export const editFile = tool({
@@ -33,14 +40,17 @@ export const editFile = tool({
         return { error: 'Could not find text to replace. Check whitespace and context.' };
       }
 
+      const diff = shortDiff(oldText, newText);
+      const ok = await confirm(`edit ${path.basename(filePath)}?\n${diff}`);
+      if (!ok) {
+        return { message: 'cancelled', silent: true };
+      }
+
       saveWrite(fullPath);
       const updated = content.replace(oldText, newText);
       fs.writeFileSync(fullPath, updated, 'utf-8');
 
-      const link = fileLink(fullPath, filePath);
-      process.stdout.write(`\r\x1b[K${dim(`edited ${link}`)}\n`);
-
-      return { success: true, silent: true };
+      return { message: `edited ${filePath}`, silent: true };
     } catch (e) {
       return { error: `Failed to edit: ${(e as Error).message}` };
     }

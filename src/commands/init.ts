@@ -38,6 +38,8 @@ function readPassword(prompt: string): Promise<string> {
           resolve(password);
           break;
         case '\u0003':
+          stdin.setRawMode?.(false);
+          process.stdout.write('\n');
           process.exit(1);
           break;
         case '\u007f':
