@@ -7,6 +7,31 @@ import { pathError, safePath } from '../utils/safe-path.js';
 import { saveWrite } from '../utils/undo.js';
 import { confirm } from './confirm.js';
 
+function writeDiff(oldContent: string | null, newContent: string): string {
+  const PREVIEW = 5;
+  const lines: string[] = [];
+
+  if (oldContent !== null) {
+    // Existing file – show removed / added (first N lines each)
+    const oldLines = oldContent.split('\n').slice(0, PREVIEW);
+    const newLines = newContent.split('\n').slice(0, PREVIEW);
+    for (const l of oldLines) lines.push(`\x1b[31m- ${l}\x1b[39m`);
+    for (const l of newLines) lines.push(`\x1b[32m+ ${l}\x1b[39m`);
+    const more =
+      Math.max(oldContent.split('\n').length, newContent.split('\n').length) -
+      PREVIEW;
+    if (more > 0) lines.push(`  ... ${more} more lines`);
+  } else {
+    // New file – show additions only
+    const newLines = newContent.split('\n').slice(0, PREVIEW);
+    for (const l of newLines) lines.push(`\x1b[32m+ ${l}\x1b[39m`);
+    const more = newContent.split('\n').length - PREVIEW;
+    if (more > 0) lines.push(`  ... ${more} more lines`);
+  }
+
+  return lines.join('\n');
+}
+
 export const writeFile = tool({
   description:
     'Write or create a file with the given content. Use this to help users create or modify files.',
@@ -22,8 +47,14 @@ export const writeFile = tool({
 
       const exists = fs.existsSync(fullPath);
       const verb = exists ? 'Update' : 'Create';
+      const oldContent = exists
+        ? fs.readFileSync(fullPath, 'utf-8')
+        : null;
+      const diff = writeDiff(oldContent, content);
 
-      const ok = await confirm(`${verb} ${filePath}?`);
+      const ok = await confirm(
+        `${verb} ${path.basename(filePath)}?\n${diff}`,
+      );
       if (!ok) {
         return { error: 'User denied this action. Do not retry.' };
       }
