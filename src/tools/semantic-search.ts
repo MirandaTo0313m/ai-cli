@@ -1,4 +1,4 @@
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { tool } from 'ai';
@@ -59,7 +59,7 @@ const BATCH_SIZE = 50; // embed this many chunks at a time
 function getCodeFiles(cwd: string): string[] {
   // Try git ls-files first
   try {
-    const out = execSync('git ls-files', {
+    const out = execFileSync('git', ['ls-files'], {
       cwd,
       encoding: 'utf-8',
       timeout: 3000,

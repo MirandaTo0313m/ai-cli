@@ -43,8 +43,9 @@ export function isAllowed(
   const dir = path.resolve(directory);
   for (const rule of rules) {
     if (rule.tool !== tool) continue;
-    // Directory must match or be a parent
-    if (!dir.startsWith(rule.directory)) continue;
+    // Directory must match or be a child (with path separator boundary)
+    if (dir !== rule.directory && !dir.startsWith(rule.directory + path.sep))
+      continue;
     // For runCommand, command must match exactly
     if (rule.tool === 'runCommand') {
       if (rule.command && rule.command === command) return true;

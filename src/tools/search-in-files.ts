@@ -1,4 +1,4 @@
-import { execSync } from 'node:child_process';
+import { execFileSync, execSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { tool } from 'ai';
@@ -31,8 +31,9 @@ function searchWithRg(
   if (!hasRg()) return null;
   try {
     // -n = line numbers, -i = case-insensitive, --no-heading, -M = max line length
-    const out = execSync(
-      `rg -n -i --no-heading -M 200 --max-count ${max} -- ${JSON.stringify(query)}`,
+    const out = execFileSync(
+      'rg',
+      ['-n', '-i', '--no-heading', '-M', '200', '--max-count', String(max), '--', query],
       {
         cwd: baseDir,
         encoding: 'utf-8',
