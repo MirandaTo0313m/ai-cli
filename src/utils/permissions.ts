@@ -2,7 +2,9 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { BASE_DIR, ensureBaseDir } from '../config/paths.js';
 
-const PERMISSIONS_FILE = path.join(BASE_DIR, 'permissions.json');
+function permissionsFile(): string {
+  return path.join(BASE_DIR, 'permissions.json');
+}
 
 export interface Rule {
   tool: string;
@@ -20,8 +22,9 @@ let cached: PermissionsData | null = null;
 function load(): PermissionsData {
   if (cached) return cached;
   try {
-    if (fs.existsSync(PERMISSIONS_FILE)) {
-      const data = JSON.parse(fs.readFileSync(PERMISSIONS_FILE, 'utf-8'));
+    const file = permissionsFile();
+    if (fs.existsSync(file)) {
+      const data = JSON.parse(fs.readFileSync(file, 'utf-8'));
       if (data && Array.isArray(data.rules)) {
         cached = data as PermissionsData;
         return cached;
@@ -34,7 +37,7 @@ function load(): PermissionsData {
 
 function save(data: PermissionsData): void {
   ensureBaseDir();
-  fs.writeFileSync(PERMISSIONS_FILE, JSON.stringify(data, null, 2), 'utf-8');
+  fs.writeFileSync(permissionsFile(), JSON.stringify(data, null, 2), 'utf-8');
   cached = data;
 }
 
