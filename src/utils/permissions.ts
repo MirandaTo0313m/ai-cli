@@ -1,0 +1,106 @@
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { BASE_DIR, ensureBaseDir } from '../config/paths.js';
+
+const PERMISSIONS_FILE = path.join(BASE_DIR, 'permissions.json');
+
+export interface Rule {
+  tool: string;
+  directory: string;
+  /** Only for runCommand — the exact command string */
+  command?: string;
+}
+
+interface PermissionsData {
+  rules: Rule[];
+}
+
+function load(): PermissionsData {
+  try {
+    if (fs.existsSync(PERMISSIONS_FILE)) {
+      const data = JSON.parse(fs.readFileSync(PERMISSIONS_FILE, 'utf-8'));
+      if (data && Array.isArray(data.rules)) return data as PermissionsData;
+    }
+  } catch {}
+  return { rules: [] };
+}
+
+function save(data: PermissionsData): void {
+  ensureBaseDir();
+  fs.writeFileSync(PERMISSIONS_FILE, JSON.stringify(data, null, 2), 'utf-8');
+}
+
+/**
+ * Check if a tool action is allowed by a persistent rule.
+ * For runCommand, `command` must also match exactly.
+ */
+export function isAllowed(
+  tool: string,
+  directory: string,
+  command?: string,
+): boolean {
+  const { rules } = load();
+  const dir = path.resolve(directory);
+  for (const rule of rules) {
+    if (rule.tool !== tool) continue;
+    // Directory must match or be a parent
+    if (!dir.startsWith(rule.directory)) continue;
+    // For runCommand, command must match exactly
+    if (rule.tool === 'runCommand') {
+      if (rule.command && rule.command === command) return true;
+    } else {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Add a persistent always-allow rule.
+ */
+export function addRule(
+  tool: string,
+  directory: string,
+  command?: string,
+): void {
+  const data = load();
+  const dir = path.resolve(directory);
+  // Avoid duplicates
+  const exists = data.rules.some(
+    (r) =>
+      r.tool === tool &&
+      r.directory === dir &&
+      (r.tool === 'runCommand' ? r.command === command : true),
+  );
+  if (exists) return;
+
+  const rule: Rule = { tool, directory: dir };
+  if (command) rule.command = command;
+  data.rules.push(rule);
+  save(data);
+}
+
+/**
+ * Remove a rule by index (0-based).
+ */
+export function removeRule(index: number): boolean {
+  const data = load();
+  if (index < 0 || index >= data.rules.length) return false;
+  data.rules.splice(index, 1);
+  save(data);
+  return true;
+}
+
+/**
+ * Remove all rules.
+ */
+export function clearRules(): void {
+  save({ rules: [] });
+}
+
+/**
+ * Return all rules.
+ */
+export function listRules(): Rule[] {
+  return load().rules;
+}

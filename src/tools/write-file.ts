@@ -54,6 +54,7 @@ export const writeFile = tool({
 
       const ok = await confirm(
         `${verb} ${path.basename(filePath)}?\n${diff}`,
+        { tool: 'writeFile' },
       );
       if (!ok) {
         return { error: 'User denied this action. Do not retry.' };
