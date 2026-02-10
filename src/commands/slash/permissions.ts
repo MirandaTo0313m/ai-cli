@@ -11,9 +11,11 @@ export const permissions: CommandHandler = (_ctx, args) => {
       };
     }
     const lines = rules.map((r, i) => {
-      const dir = r.directory.startsWith(process.env.HOME || '')
-        ? `~${r.directory.slice((process.env.HOME || '').length)}`
-        : r.directory;
+      const home = process.env.HOME || '';
+      const dir =
+        home && (r.directory === home || r.directory.startsWith(home + '/'))
+          ? `~${r.directory.slice(home.length)}`
+          : r.directory;
       if (r.tool === 'runCommand' && r.command) {
         return `${i}: allow "${r.command}" in ${dir}`;
       }

@@ -1,9 +1,16 @@
-import { describe, expect, test } from 'bun:test';
+import { beforeEach, describe, expect, test } from 'bun:test';
 import { confirm, setConfirmHandler } from '../src/tools/confirm.js';
 
 describe('confirm', () => {
-  test('returns true by default (no handler)', async () => {
-    // Reset handler by setting to one that always returns true
+  beforeEach(() => {
+    setConfirmHandler(null);
+  });
+
+  test('returns true when no handler is set', async () => {
+    expect(await confirm('test action')).toBe(true);
+  });
+
+  test('returns true when handler approves', async () => {
     setConfirmHandler(async () => true);
     expect(await confirm('test action')).toBe(true);
   });
