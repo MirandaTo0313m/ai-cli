@@ -1,4 +1,4 @@
-import { execSync } from 'node:child_process';
+import { execFileSync, execSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { tool } from 'ai';
@@ -29,12 +29,11 @@ function findWithRg(
   if (!hasRg()) return null;
   try {
     // Convert glob pattern to regex for filtering filenames
-    const regex = pattern
-      .replace(/\./g, '\\.')
-      .replace(/\*/g, '.*')
-      .replace(/\?/g, '.');
+    // Escape all regex-special chars first, then convert glob wildcards
+    const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = escaped.replace(/\\\*/g, '.*').replace(/\\\?/g, '.');
     // rg --files lists all files respecting .gitignore
-    const out = execSync('rg --files', {
+    const out = execFileSync('rg', ['--files'], {
       cwd: baseDir,
       encoding: 'utf-8',
       timeout: 10000,
@@ -72,10 +71,8 @@ const IGNORED = [
 ];
 
 function matchPattern(name: string, pattern: string): boolean {
-  const regex = pattern
-    .replace(/\./g, '\\.')
-    .replace(/\*/g, '.*')
-    .replace(/\?/g, '.');
+  const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = escaped.replace(/\\\*/g, '.*').replace(/\\\?/g, '.');
   return new RegExp(`^${regex}$`, 'i').test(name);
 }
 
