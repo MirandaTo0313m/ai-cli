@@ -50,7 +50,7 @@ export async function confirm(
 }
 
 export function setConfirmHandler(
-  fn: (action: string, opts?: ConfirmOpts) => Promise<boolean>,
+  fn: ((action: string, opts?: ConfirmOpts) => Promise<boolean>) | null,
 ): void {
   handler = fn;
 }

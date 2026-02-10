@@ -15,19 +15,27 @@ interface PermissionsData {
   rules: Rule[];
 }
 
+let cached: PermissionsData | null = null;
+
 function load(): PermissionsData {
+  if (cached) return cached;
   try {
     if (fs.existsSync(PERMISSIONS_FILE)) {
       const data = JSON.parse(fs.readFileSync(PERMISSIONS_FILE, 'utf-8'));
-      if (data && Array.isArray(data.rules)) return data as PermissionsData;
+      if (data && Array.isArray(data.rules)) {
+        cached = data as PermissionsData;
+        return cached;
+      }
     }
   } catch {}
-  return { rules: [] };
+  cached = { rules: [] };
+  return cached;
 }
 
 function save(data: PermissionsData): void {
   ensureBaseDir();
   fs.writeFileSync(PERMISSIONS_FILE, JSON.stringify(data, null, 2), 'utf-8');
+  cached = data;
 }
 
 /**

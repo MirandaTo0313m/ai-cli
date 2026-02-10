@@ -178,6 +178,11 @@ export async function terminal(model: string, version: string): Promise<void> {
 
         // Lock output — all other out.write() calls are now silently dropped
         const lock = out.lock();
+        if (!lock) {
+          // Another modal already owns the output; auto-deny to avoid corruption
+          resolve(false);
+          return;
+        }
         confirmMode = true;
 
         const options = ['yes', 'no', 'always'];

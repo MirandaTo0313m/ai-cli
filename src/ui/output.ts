@@ -26,8 +26,10 @@ export class Output {
   /**
    * Acquire exclusive output.  Returns a handle whose `write` always
    * reaches stdout and whose `release` unlocks the output for everyone.
+   * Returns `null` if the output is already locked (prevents re-entrancy).
    */
-  lock(): { write: (text: string) => void; release: () => void } {
+  lock(): { write: (text: string) => void; release: () => void } | null {
+    if (this._locked) return null;
     this._locked = true;
     return {
       write: (text: string) => process.stdout.write(text),
