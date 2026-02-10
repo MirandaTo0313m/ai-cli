@@ -194,8 +194,10 @@ export async function terminal(model: string, version: string): Promise<void> {
         const bodyLines = actionLines.slice(1);
         const hasBody = bodyLines.length > 0;
 
+        let wasEditStream = false;
         if (editStreamRendered) {
           // Diff was already streamed to screen — just add spacing
+          wasEditStream = true;
           editStreamRendered = false;
           editStreamLineCount = 0;
           lock.write('\n');
@@ -220,7 +222,21 @@ export async function terminal(model: string, version: string): Promise<void> {
 
         const finish = (choice: string) => {
           process.stdin.removeListener('keypress', onKey);
-          lock.write(`\r${ansi.eraseLine}${dim(`› ${choice}`)}\n`);
+          const accepted = choice === 'yes' || choice === 'always';
+
+          if (accepted && !hasBody && !wasEditStream) {
+            // Erase the confirm prompt entirely for simple confirms (e.g.
+            // "Run: git clone ...?") — the tool result will describe what
+            // happened (e.g. "Ran git clone ..."), so keeping both is noisy.
+            const linesToErase = 1; // header line
+            lock.write(`\r${ansi.eraseLine}`); // clear options line
+            for (let i = 0; i < linesToErase; i++) {
+              lock.write(`${ansi.cursorUp(1)}${ansi.eraseLine}`);
+            }
+          } else {
+            lock.write(`\r${ansi.eraseLine}${dim(`› ${choice}`)}\n`);
+          }
+
           // Release lock BEFORE resolving so downstream writes render again
           confirmMode = false;
           lock.release();
@@ -948,7 +964,8 @@ export async function terminal(model: string, version: string): Promise<void> {
   process.stdout.write(ansi.clearTerminal + ansi.cursorTo(0, 0));
   updateTitle();
   addAndPrint('info', `ai ${version} [${currentModel}]`);
-  addAndPrint('info', 'type /help for commands');
+  addMessage('info', 'type /help for commands');
+  out.write(`${dim('type /help for commands')}\n`);
 
   readline.emitKeypressEvents(process.stdin);
   if (process.stdin.isTTY) process.stdin.setRawMode(true);
