@@ -90,6 +90,16 @@ function extractJsonStringValue(
         case 'r':
           value += '\r';
           break;
+        case 'u': {
+          const hex = text.slice(i + 1, i + 5);
+          if (hex.length === 4 && /^[0-9a-fA-F]{4}$/.test(hex)) {
+            value += String.fromCharCode(parseInt(hex, 16));
+            i += 4;
+          } else {
+            value += 'u'; // incomplete, keep raw
+          }
+          break;
+        }
         default:
           value += ch;
       }
@@ -383,7 +393,7 @@ export async function streamChat(options: StreamOptions): Promise<Chat> {
             status = `Editing ${f}`;
             currentToolLabel = '';
           } else if (tc.toolName === 'deleteFile') {
-            const f = input?.filePath || 'file';
+            const f = input?.paths?.[0] || 'file';
             status = `Deleting ${f}`;
             currentToolLabel = '';
           } else if (tc.toolName === 'copyFile') {
@@ -718,7 +728,12 @@ export async function streamChat(options: StreamOptions): Promise<Chat> {
   if (chat.messages.length === 2 && chat.title === 'New chat') {
     const first = chat.messages.find((m) => m.role === 'user');
     if (first) {
-      chat.title = first.content.slice(0, 50).trim();
+      const raw = first.content;
+      const text =
+        typeof raw === 'string'
+          ? raw
+          : (raw.find((p: any) => p.type === 'text') as any)?.text ?? '';
+      chat.title = text.slice(0, 50).trim();
     }
   }
 

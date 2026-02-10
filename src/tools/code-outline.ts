@@ -2,6 +2,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { tool } from 'ai';
 import { z } from 'zod';
+import { safePath, pathError } from '../utils/safe-path.js';
 
 interface Symbol {
   name: string;
@@ -174,7 +175,8 @@ export const codeOutline = tool({
   }),
   execute: async ({ filePath, maxFiles = 20 }) => {
     try {
-      const fullPath = path.resolve(filePath);
+      const fullPath = safePath(filePath);
+      if (!fullPath) return { error: pathError(filePath) };
 
       if (!fs.existsSync(fullPath)) {
         return { error: `not found: ${filePath}` };

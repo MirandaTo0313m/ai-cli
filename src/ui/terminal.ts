@@ -393,7 +393,7 @@ export async function terminal(model: string, version: string): Promise<void> {
   }
 
   function redraw() {
-    if (busy || selectMode) return;
+    if (busy || selectMode || confirmMode) return;
     process.stdout.write(ansi.clearTerminal + ansi.cursorTo(0, 0));
     for (const msg of messages) {
       printMessage(msg);
@@ -950,7 +950,7 @@ export async function terminal(model: string, version: string): Promise<void> {
   process.stdin.resume();
 
   process.stdin.on('keypress', (_str, key) => {
-    if (selectMode || busy) return;
+    if (selectMode || busy || confirmMode) return;
 
     if (key?.name === 'escape') {
       commandMode = false;
