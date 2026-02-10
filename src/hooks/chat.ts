@@ -256,8 +256,14 @@ export async function streamChat(options: StreamOptions): Promise<Chat> {
 
       // Reset silent at the start of each new step so text from the model
       // in subsequent steps is displayed (e.g. clarifying questions after
-      // tool calls).
+      // tool calls).  Also flush the text buffer so new-step text doesn't
+      // include text that was already streamed in a prior step.
       if (partType === 'start-step') {
+        if (buffer) {
+          callbacks.onRecord('assistant', buffer);
+          callbacks.onPending('');
+          buffer = '';
+        }
         silent = false;
       }
 
