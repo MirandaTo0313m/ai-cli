@@ -1,10 +1,30 @@
-let handler: ((action: string) => Promise<boolean>) | null = null;
+import { isAllowed } from '../utils/permissions.js';
+
+export interface ConfirmOpts {
+  tool?: string;
+  command?: string;
+}
+
+let handler:
+  | ((action: string, opts?: ConfirmOpts) => Promise<boolean>)
+  | null = null;
 
 // Queue to serialize concurrent confirm() calls so only one prompt
 // is visible at a time (the AI SDK fires tool executions in parallel).
 let queue: Promise<boolean> = Promise.resolve(true);
 
-export async function confirm(action: string): Promise<boolean> {
+export async function confirm(
+  action: string,
+  opts?: ConfirmOpts,
+): Promise<boolean> {
+  // Check persistent permissions first
+  if (opts?.tool) {
+    const cwd = process.cwd();
+    if (isAllowed(opts.tool, cwd, opts.command)) {
+      return true;
+    }
+  }
+
   if (!handler) {
     // Default: allow in non-interactive (piped) mode
     return true;
@@ -21,7 +41,7 @@ export async function confirm(action: string): Promise<boolean> {
   await prev;
 
   try {
-    const result = await handler(action);
+    const result = await handler(action, opts);
     resolve(result);
     return result;
   } catch (e) {
@@ -31,7 +51,7 @@ export async function confirm(action: string): Promise<boolean> {
 }
 
 export function setConfirmHandler(
-  fn: (action: string) => Promise<boolean>,
+  fn: (action: string, opts?: ConfirmOpts) => Promise<boolean>,
 ): void {
   handler = fn;
 }

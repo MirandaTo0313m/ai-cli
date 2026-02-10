@@ -22,7 +22,10 @@ export const runCommand = tool({
       return { error: 'use startProcess for long-running commands' };
     }
 
-    const ok = await confirm(`Run: ${command}?`);
+    const ok = await confirm(`Run: ${command}?`, {
+      tool: 'runCommand',
+      command,
+    });
     if (!ok) {
       return { error: 'User denied this action. Do not retry.' };
     }

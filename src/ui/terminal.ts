@@ -11,6 +11,7 @@ import {
 } from '../commands/slash/index.js';
 import { setConfirmHandler } from '../tools/confirm.js';
 import type { Context } from '../commands/slash/types.js';
+import { addRule } from '../utils/permissions.js';
 import type { Chat } from '../config/chats.js';
 import {
   createChat,
@@ -128,16 +129,9 @@ export async function terminal(model: string, version: string): Promise<void> {
     process.stdin.setRawMode(true);
   }
 
-  let alwaysAllow = false;
-
   setConfirmHandler(
-    (action: string) =>
+    (action, opts) =>
       new Promise<boolean>((resolve) => {
-        if (alwaysAllow) {
-          resolve(true);
-          return;
-        }
-
         // Flush stream & clear status BEFORE locking so they render normally
         clearStatus();
         if (streamBuffer && currentStreamWrap) {
@@ -198,7 +192,10 @@ export async function terminal(model: string, version: string): Promise<void> {
           confirmMode = false;
           lock.release();
           if (choice === 'always') {
-            alwaysAllow = true;
+            // Persist the rule for this tool/command in this directory
+            if (opts?.tool) {
+              addRule(opts.tool, process.cwd(), opts.command);
+            }
             resolve(true);
           } else {
             resolve(choice === 'yes');
