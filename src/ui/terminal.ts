@@ -37,6 +37,7 @@ import { detectPackageManager } from '../utils/package-manager.js';
 import { killAllProcesses } from '../utils/processes.js';
 import { createStreamWrap, wrap } from '../utils/wrap.js';
 import { Output } from './output.js';
+import { SpacingController } from './spacing.js';
 
 interface ReadlineInternal extends readline.Interface {
   line: string;
@@ -55,8 +56,13 @@ import { dim, dimmer, green, red } from '../utils/color.js';
 
 const setTitle = (s: string) => process.stdout.write(`\x1b]0;${s}\x07`);
 
+function trimLeadingBlankLines(text: string): string {
+  return text.replace(/^(?:\r?\n)+/, '');
+}
+
 export async function terminal(model: string, version: string): Promise<void> {
   const out = new Output();
+  const spacing = new SpacingController((text) => out.write(text));
 
   let currentModel = model;
   let chat: Chat | null = null;
@@ -73,8 +79,6 @@ export async function terminal(model: string, version: string): Promise<void> {
   let currentStreamWrap: ReturnType<typeof createStreamWrap> | null = null;
   let selectMode = false;
   let confirmMode = false;
-  let needsSpacingAfterConfirm = false;
-  let gapBeforeFirstStatus = false;
   let commandMode = false;
   let cmdSuggestionCount = 0; // number of suggestion lines currently rendered
   let editStreamRendered = false;
@@ -251,11 +255,12 @@ export async function terminal(model: string, version: string): Promise<void> {
             }
             // Don't write '\n' here — the cursor position after erase is
             // unpredictable (depends on spinner/editStream/thinking state).
-            // Instead, the onMessage callback will prepend '\n' before the
-            // tool result to guarantee exactly one blank line.
-            needsSpacingAfterConfirm = true;
+            // The next output callback inserts exactly one blank-line gap.
+            spacing.markAfterConfirm();
           } else {
             lock.write(`\r${ansi.eraseLine}${dim(`› ${choice}`)}\n`);
+            // Treat confirm choices like user messages for spacing.
+            spacing.markAfterConfirm();
           }
 
           // Release lock BEFORE resolving so downstream writes render again
@@ -467,14 +472,12 @@ export async function terminal(model: string, version: string): Promise<void> {
       clearInterval(spinnerTimer);
       spinnerTimer = null;
     }
-    if (statusText) {
+    const hadStatus = Boolean(statusText);
+    if (hadStatus) {
       out.write(ansi.cursorUp(1) + ansi.eraseLine + ansi.cursorLeft);
     }
-    // After a user prompt, `out.write('\n')` places the cursor on the
-    // gap row.  Push the spinner one row lower so the gap stays visible.
-    if (gapBeforeFirstStatus) {
-      gapBeforeFirstStatus = false;
-      out.write('\n');
+    if (!hadStatus) {
+      spacing.beforeStatus();
     }
     spinnerIdx = 0;
     out.write(`${dim(`${spinnerFrames[0]} ${text}`)}\n`);
@@ -539,7 +542,8 @@ export async function terminal(model: string, version: string): Promise<void> {
         out.write(`${dim('› ') + wrap(msg.content)}\n\n`);
         break;
       case 'assistant': {
-        const content = markdown ? renderMarkdown(msg.content) : msg.content;
+        const assistant = trimLeadingBlankLines(msg.content);
+        const content = markdown ? renderMarkdown(assistant) : assistant;
         out.write(`${wrap(mask(content))}\n`);
         break;
       }
@@ -843,7 +847,7 @@ export async function terminal(model: string, version: string): Promise<void> {
     addMessage('user', msg);
 
     busy = true;
-    needsSpacingAfterConfirm = false;
+    spacing.markUserSubmit();
     const controller = new AbortController();
     abortController = controller;
     streamBuffer = '';
@@ -852,7 +856,6 @@ export async function terminal(model: string, version: string): Promise<void> {
 
     process.stdout.write(ansi.cursorHide);
     rl.pause();
-    gapBeforeFirstStatus = true;
 
     try {
       const updatedChat = await streamChat({
@@ -878,39 +881,40 @@ export async function terminal(model: string, version: string): Promise<void> {
           },
           onPending: (text) => {
             clearStatus();
-            if (text.length > streamBuffer.length) {
-              const newText = text.slice(streamBuffer.length);
+            const normalized = trimLeadingBlankLines(text);
+            if (normalized.length > streamBuffer.length) {
+              spacing.beforeOutput();
+              const newText = normalized.slice(streamBuffer.length);
               const wrapped = streamWrap.write(mask(newText));
               out.write(wrapped);
-              streamBuffer = text;
+              streamBuffer = normalized;
             }
           },
           onMessage: (type, content) => {
             clearStatus();
-            if (needsSpacingAfterConfirm) {
-              needsSpacingAfterConfirm = false;
-              // After confirm erase, editStream-based tools (info msgs)
-              // already land on the correct row.  Other tool result types
-              // (e.g. 'tool' for "Ran …") need an explicit blank-line gap.
-              if (type !== 'info') {
-                out.write('\n');
-              }
-            }
+            spacing.beforeOutput();
+            const normalizedContent =
+              type === 'assistant' ? trimLeadingBlankLines(content) : content;
             if (type === 'assistant') {
               if (streamBuffer) {
                 const remaining = streamWrap.flush();
                 out.write(`${remaining}\n`);
               } else {
-                printMessage({ type, content });
+                printMessage({ type, content: normalizedContent });
               }
               streamBuffer = '';
               streamWrap.reset();
             } else {
-              printMessage({ type, content });
+              printMessage({ type, content: normalizedContent });
             }
-            addMessage(type, content);
+            addMessage(type, normalizedContent);
+            if (type === 'assistant' || type === 'error') {
+              spacing.markAfterBareMessage();
+            }
           },
           onRecord: (type, content) => {
+            const normalizedContent =
+              type === 'assistant' ? trimLeadingBlankLines(content) : content;
             // Finalize stream wrap without re-rendering text
             if (type === 'assistant' && streamBuffer) {
               const remaining = streamWrap.flush();
@@ -918,11 +922,13 @@ export async function terminal(model: string, version: string): Promise<void> {
               out.write('\n');
               streamBuffer = '';
               streamWrap.reset();
+              spacing.markAfterBareMessage();
             }
-            addMessage(type, content);
+            addMessage(type, normalizedContent);
           },
           onReasoning: (text, durationMs) => {
             clearStatus();
+            spacing.beforeOutput();
             const seconds = Math.round(durationMs / 1000);
             const label =
               seconds > 0 ? `thought for ${seconds}s` : 'thought briefly';
@@ -937,6 +943,7 @@ export async function terminal(model: string, version: string): Promise<void> {
           },
           onEditStream: (filePath, oldLines, newLines, more) => {
             clearStatus();
+            spacing.beforeOutput();
 
             // Clear previously rendered streaming lines
             for (let i = 0; i < editStreamLineCount; i++) {
@@ -996,6 +1003,7 @@ export async function terminal(model: string, version: string): Promise<void> {
     } catch (e) {
       clearStatus();
       if ((e as Error).name !== 'AbortError') {
+        spacing.beforeOutput();
         addAndPrint('error', formatError(e));
       }
     }
@@ -1009,8 +1017,8 @@ export async function terminal(model: string, version: string): Promise<void> {
   }
 
   function prompt() {
-    const spacing = getSetting('spacing') ?? 1;
-    process.stdout.write('\n'.repeat(spacing));
+    const promptSpacing = getSetting('spacing') ?? 1;
+    process.stdout.write('\n'.repeat(promptSpacing));
     rl.setPrompt(dim('› '));
     rl.prompt();
   }

@@ -33,7 +33,7 @@ export interface SpawnedCli {
 
 export function spawnCli(
   args: string[] = [],
-  opts: { cwd?: string } = {},
+  opts: { cwd?: string; env?: Record<string, string> } = {},
 ): SpawnedCli {
   const COLS = 120;
   const ROWS = 40;
@@ -46,7 +46,7 @@ export function spawnCli(
 
   const proc = Bun.spawn([process.execPath, CLI, '--no-color', ...args], {
     cwd: opts.cwd || process.cwd(),
-    env: { ...process.env, NO_COLOR: '1', TERM: 'dumb' },
+    env: { ...process.env, ...opts.env, NO_COLOR: '1', TERM: 'dumb' },
     terminal: {
       cols: COLS,
       rows: ROWS,

@@ -100,3 +100,54 @@ describe('edit confirm erased', () => {
     }
   }, 90_000);
 });
+
+describe('status spacing', () => {
+  test('single blank line between user message and running status', async () => {
+    cli = spawnCli([], { env: { AI_CLI_TEST_SCENARIO: 'spacing-running' } });
+    await cli.waitFor('type /help');
+    cli.write('install deps\r');
+    await cli.waitFor('Running cd blog && npm install');
+    await new Promise((r) => setTimeout(r, 150));
+
+    const screen = cli.getScreen();
+    expect(blankLinesAfter(screen, 'install deps')).toBe(1);
+  }, 90_000);
+});
+
+describe('assistant text spacing', () => {
+  test('single blank line before assistant text even with leading newlines', async () => {
+    cli = spawnCli([], {
+      env: { AI_CLI_TEST_SCENARIO: 'spacing-leading-newlines' },
+    });
+    await cli.waitFor('type /help');
+    cli.write('delete node mods\r');
+    await cli.waitFor(
+      'There is no node_modules directory visible in the project.',
+    );
+    await new Promise((r) => setTimeout(r, 150));
+
+    const screen = cli.getScreen();
+    expect(blankLinesAfter(screen, 'delete node mods')).toBe(1);
+  }, 90_000);
+});
+
+describe('multi-turn spacing sequence', () => {
+  test('keeps one blank line between each visible message block', async () => {
+    cli = spawnCli([], { env: { AI_CLI_TEST_SCENARIO: 'spacing-sequence' } });
+    await cli.waitFor('type /help');
+
+    cli.write('delete node mods in blog folder\r');
+    await cli.waitFor('No node_modules directory found in the blog folder.');
+
+    cli.write('install node mods\r');
+    await cli.waitFor('Running cd blog && npm install');
+    await new Promise((r) => setTimeout(r, 150));
+
+    const screen = cli.getScreen();
+    expect(blankLinesAfter(screen, 'delete node mods in blog folder')).toBe(1);
+    expect(blankLinesAfter(screen, 'error: not found: blog/node_modules')).toBe(
+      1,
+    );
+    expect(blankLinesAfter(screen, 'install node mods')).toBe(1);
+  }, 90_000);
+});
