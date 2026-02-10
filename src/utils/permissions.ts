@@ -1,6 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { BASE_DIR, ensureBaseDir } from '../config/paths.js';
+import { BASE_DIR } from '../config/paths.js';
 
 function permissionsFile(): string {
   return path.join(BASE_DIR, 'permissions.json');
@@ -36,8 +36,9 @@ function load(): PermissionsData {
 }
 
 function save(data: PermissionsData): void {
-  ensureBaseDir();
-  fs.writeFileSync(permissionsFile(), JSON.stringify(data, null, 2), 'utf-8');
+  const file = permissionsFile();
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf-8');
   cached = data;
 }
 
