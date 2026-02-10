@@ -21,6 +21,17 @@ function hasRg(): boolean {
   return _hasRg;
 }
 
+function globToRegex(pattern: string): string {
+  let regex = '';
+  for (const ch of pattern) {
+    if (ch === '*') regex += '.*';
+    else if (ch === '?') regex += '.';
+    else if ('.+^${}()|[]\\'.includes(ch)) regex += '\\' + ch;
+    else regex += ch;
+  }
+  return regex;
+}
+
 function findWithRg(
   pattern: string,
   baseDir: string,
@@ -28,10 +39,7 @@ function findWithRg(
 ): string[] | null {
   if (!hasRg()) return null;
   try {
-    // Convert glob pattern to regex for filtering filenames
-    // Escape all regex-special chars first, then convert glob wildcards
-    const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = escaped.replace(/\\\*/g, '.*').replace(/\\\?/g, '.');
+    const regex = globToRegex(pattern);
     // rg --files lists all files respecting .gitignore
     const out = execFileSync('rg', ['--files'], {
       cwd: baseDir,
@@ -71,8 +79,7 @@ const IGNORED = [
 ];
 
 function matchPattern(name: string, pattern: string): boolean {
-  const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = escaped.replace(/\\\*/g, '.*').replace(/\\\?/g, '.');
+  const regex = globToRegex(pattern);
   return new RegExp(`^${regex}$`, 'i').test(name);
 }
 
