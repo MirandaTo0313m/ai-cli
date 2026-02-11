@@ -42,8 +42,12 @@ const details: Record<string, string> = {
   also shows loaded rules files`,
 
   processes: `/processes
-  /processes         list background processes
-  /processes <pid>   kill process by id`,
+  /processes         list background processes (with URLs and exit status)
+  /processes <pid>   kill process by id
+  /processes logs    show recent output from last process
+  /processes logs <pid>  show recent output from specific process
+  /processes killall kill all running, clear exited
+  /processes clear   remove exited processes from list`,
 
   memory: `/memory
   /memory            list saved memories
