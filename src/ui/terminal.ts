@@ -98,6 +98,8 @@ export async function terminal(
   let confirmMode = false;
   let commandMode = false;
   let cmdBuffer = ''; // manual line buffer for command mode (bypasses readline)
+  let cmdFromHistory = false; // whether command mode was entered by history recall
+  let cmdHistoryIdx = -1; // tracked position in readline history during history browsing
   let multilineLines: string[] = []; // accumulated lines for multiline input
   const cmdMenu = new InlineMenu([], {
     maxVisible: 8,
@@ -143,6 +145,8 @@ export async function terminal(
   function exitCommandMode(): void {
     commandMode = false;
     cmdBuffer = '';
+    cmdFromHistory = false;
+    cmdHistoryIdx = -1;
     cmdMenu.close();
     rl.setPrompt(dim('› '));
     process.stdout.write(`\r${ansi.eraseLine}${dim('› ')}`);
@@ -151,6 +155,51 @@ export async function terminal(
   /** Redraw the command-mode prompt line (without touching readline). */
   function redrawCmdLine(): void {
     process.stdout.write(`\r${ansi.eraseLine}${dim('/ ')}${cmdBuffer}`);
+  }
+
+  /**
+   * Navigate command history when in cmdFromHistory mode.
+   * Up = older (higher index), Down = newer (lower index).
+   */
+  function navigateCmdHistory(direction: 'up' | 'down'): void {
+    const hist = (rl as ReadlineInternal).history;
+    const newIdx = direction === 'up' ? cmdHistoryIdx + 1 : cmdHistoryIdx - 1;
+
+    // Down past newest entry → exit to empty prompt
+    if (newIdx < 0) {
+      commandMode = false;
+      cmdFromHistory = false;
+      cmdBuffer = '';
+      cmdHistoryIdx = -1;
+      cmdMenu.close();
+      rl.setPrompt(dim('› '));
+      (rl as ReadlineInternal).line = '';
+      (rl as ReadlineInternal).cursor = 0;
+      process.stdout.write(`\r${ansi.eraseLine}${dim('› ')}`);
+      return;
+    }
+
+    // No more history
+    if (newIdx >= hist.length) return;
+
+    cmdHistoryIdx = newIdx;
+    const entry = hist[newIdx];
+
+    if (entry.startsWith('/')) {
+      // Stay in command mode, update buffer
+      cmdBuffer = entry.slice(1);
+      redrawCmdLine();
+    } else {
+      // Exit command mode, show non-slash entry in normal mode
+      // Keep cmdFromHistory and cmdHistoryIdx for continued navigation
+      commandMode = false;
+      cmdBuffer = '';
+      cmdMenu.close();
+      rl.setPrompt(dim('› '));
+      (rl as ReadlineInternal).line = entry;
+      (rl as ReadlineInternal).cursor = entry.length;
+      process.stdout.write(`\r${ansi.eraseLine}${dim('› ')}${entry}`);
+    }
   }
 
   /** Enter model select mode with the given model list. */
@@ -547,28 +596,51 @@ export async function terminal(
 
       // Backspace — remove last char
       if (str === '\x7f' || str === '\b') {
+        if (cmdFromHistory) {
+          cmdFromHistory = false;
+          cmdHistoryIdx = -1;
+          refreshCmdMenuItems();
+        }
         cmdBuffer = cmdBuffer.slice(0, -1);
-        cmdMenu.setFilter(cmdBuffer);
+        if (!cmdMenu.isOpen) {
+          cmdMenu.open(cmdBuffer);
+        } else {
+          cmdMenu.setFilter(cmdBuffer);
+        }
         redrawCmdLine();
         return;
       }
 
-      // Up arrow — move selection up
+      // Up arrow — move selection up or navigate history
       if (str === '\x1b[A') {
-        cmdMenu.moveUp();
-        redrawCmdLine();
+        if (cmdFromHistory) {
+          navigateCmdHistory('up');
+        } else {
+          cmdMenu.moveUp();
+          redrawCmdLine();
+        }
         return;
       }
 
-      // Down arrow — move selection down
+      // Down arrow — move selection down or navigate history
       if (str === '\x1b[B') {
-        cmdMenu.moveDown();
-        redrawCmdLine();
+        if (cmdFromHistory) {
+          navigateCmdHistory('down');
+        } else {
+          cmdMenu.moveDown();
+          redrawCmdLine();
+        }
         return;
       }
 
       // Tab — complete with selected item
       if (str === '\t') {
+        if (cmdFromHistory) {
+          cmdFromHistory = false;
+          cmdHistoryIdx = -1;
+          refreshCmdMenuItems();
+          cmdMenu.open(cmdBuffer);
+        }
         const selected = cmdMenu.getSelected();
         if (selected) {
           cmdBuffer = `${selected} `;
@@ -586,6 +658,8 @@ export async function terminal(
         cmdMenu.close();
         commandMode = false;
         cmdBuffer = '';
+        cmdFromHistory = false;
+        cmdHistoryIdx = -1;
 
         if (!finalCmd) {
           rl.setPrompt(dim('› '));
@@ -612,8 +686,17 @@ export async function terminal(
 
       // Printable character — append to buffer
       if (str.length === 1 && str >= ' ') {
+        if (cmdFromHistory) {
+          cmdFromHistory = false;
+          cmdHistoryIdx = -1;
+          refreshCmdMenuItems();
+        }
         cmdBuffer += str;
-        cmdMenu.setFilter(cmdBuffer);
+        if (!cmdMenu.isOpen) {
+          cmdMenu.open(cmdBuffer);
+        } else {
+          cmdMenu.setFilter(cmdBuffer);
+        }
         redrawCmdLine();
         return;
       }
@@ -712,6 +795,21 @@ export async function terminal(
       rl.setPrompt(dim('  '));
       process.stdout.write(dim('  '));
       return;
+    }
+
+    // ── History browsing override in normal mode ──
+    // When we navigated from a slash command to a non-slash entry via
+    // cmdFromHistory, keep intercepting up/down for continued history browsing.
+    if (cmdFromHistory && (str === '\x1b[A' || str === '\x1b[B')) {
+      // Re-enter command mode context for navigateCmdHistory
+      navigateCmdHistory(str === '\x1b[A' ? 'up' : 'down');
+      return;
+    }
+
+    // Any other input clears the history browsing override
+    if (cmdFromHistory) {
+      cmdFromHistory = false;
+      cmdHistoryIdx = -1;
     }
 
     inputStream.write(chunk);
@@ -918,6 +1016,8 @@ export async function terminal(
       cmdMenu.close();
       commandMode = false;
       cmdBuffer = '';
+      cmdFromHistory = false;
+      cmdHistoryIdx = -1;
       rl.setPrompt(dim('› '));
       if (msg) {
         msg = `/${msg}`;
@@ -1321,18 +1421,21 @@ export async function terminal(
       return;
     }
 
-    // When history recalls a /command, enter command mode
+    // When history recalls a /command, enter command mode (without menu)
     if (key?.name === 'up' || key?.name === 'down') {
       setImmediate(() => {
         const line = rl.line;
         if (line.startsWith('/') && !commandMode) {
           commandMode = true;
+          cmdFromHistory = true;
           cmdBuffer = line.slice(1);
+          // Find our position in the history array
+          const hist = (rl as ReadlineInternal).history;
+          cmdHistoryIdx = hist.indexOf(line);
           (rl as ReadlineInternal).line = '';
           (rl as ReadlineInternal).cursor = 0;
           rl.setPrompt(dim('/ '));
-          refreshCmdMenuItems();
-          cmdMenu.open(cmdBuffer);
+          // Do NOT open the menu — keep it hidden for history recall
           redrawCmdLine();
         }
       });
