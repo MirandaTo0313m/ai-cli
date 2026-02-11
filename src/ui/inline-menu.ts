@@ -153,10 +153,14 @@ export class InlineMenu {
     }
 
     const total = this.filtered.length;
-    const toShow = this.filtered.slice(0, this.maxVisible);
+    const start = Math.min(
+      Math.max(0, this.selectedIndex - this.maxVisible + 1),
+      Math.max(0, total - this.maxVisible),
+    );
+    const toShow = this.filtered.slice(start, start + this.maxVisible);
 
     for (let i = 0; i < toShow.length; i++) {
-      const isSelected = i === this.selectedIndex;
+      const isSelected = i + start === this.selectedIndex;
       const label = toShow[i];
       if (isSelected) {
         process.stdout.write(`\n${ansi.eraseLine}  › ${label}`);
@@ -166,8 +170,9 @@ export class InlineMenu {
     }
 
     if (total > this.maxVisible) {
+      const hidden = total - toShow.length;
       process.stdout.write(
-        `\n${ansi.eraseLine}${dim(`    ... ${total - this.maxVisible} more`)}`,
+        `\n${ansi.eraseLine}${dim(`    ... ${hidden} more`)}`,
       );
       this.lineCount = toShow.length + 1;
     } else {
