@@ -29,14 +29,77 @@ function parseSkillTarget(
   return null;
 }
 
+async function findSkillSubpath(
+  repo: string,
+  name: string,
+): Promise<string | null> {
+  const headers: Record<string, string> = {};
+  const token = process.env.GITHUB_TOKEN;
+  if (token) headers.Authorization = `token ${token}`;
+  const opts = { headers, signal: AbortSignal.timeout(10_000) };
+
+  // Check repo root for SKILL.md
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${repo}/contents/SKILL.md`,
+      opts,
+    );
+    if (res.ok) return '';
+  } catch {}
+
+  // Check skills/<name>/SKILL.md (common convention)
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${repo}/contents/skills/${name}/SKILL.md`,
+      opts,
+    );
+    if (res.ok) return `skills/${name}`;
+  } catch {}
+
+  // List skills/ directory and check each subdirectory
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${repo}/contents/skills`,
+      opts,
+    );
+    if (res.ok) {
+      const items = (await res.json()) as Array<{
+        name: string;
+        type: string;
+        path: string;
+      }>;
+      for (const item of items) {
+        if (item.type !== 'dir') continue;
+        try {
+          const check = await fetch(
+            `https://api.github.com/repos/${repo}/contents/${item.path}/SKILL.md`,
+            opts,
+          );
+          if (check.ok) return item.path;
+        } catch {}
+      }
+    }
+  } catch {}
+
+  return null;
+}
+
 async function downloadGithubFolder(
   repo: string,
   subpath: string,
   dest: string,
+  recursive = true,
 ): Promise<void> {
+  const headers: Record<string, string> = {};
+  const token = process.env.GITHUB_TOKEN;
+  if (token) headers.Authorization = `token ${token}`;
+
   const apiUrl = `https://api.github.com/repos/${repo}/contents/${subpath}`;
-  const res = await fetch(apiUrl);
-  if (!res.ok) throw new Error('github api failed');
+  const res = await fetch(apiUrl, {
+    headers,
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!res.ok) throw new Error(`github api failed (${res.status})`);
   const items = (await res.json()) as Array<{
     name: string;
     type: string;
@@ -49,11 +112,13 @@ async function downloadGithubFolder(
   for (const item of items) {
     const itemDest = path.join(dest, item.name);
     if (item.type === 'file' && item.download_url) {
-      const fileRes = await fetch(item.download_url);
+      const fileRes = await fetch(item.download_url, {
+        signal: AbortSignal.timeout(30_000),
+      });
       const content = await fileRes.text();
       fs.writeFileSync(itemDest, content);
-    } else if (item.type === 'dir') {
-      await downloadGithubFolder(repo, item.path, itemDest);
+    } else if (item.type === 'dir' && recursive) {
+      await downloadGithubFolder(repo, item.path, itemDest, recursive);
     }
   }
 }
@@ -94,7 +159,20 @@ export const skills: CommandHandler = async (_ctx, args) => {
       if (parsed?.subpath) {
         await downloadGithubFolder(parsed.repo, parsed.subpath, dest);
       } else if (parsed) {
-        await downloadGithubFolder(parsed.repo, '', dest);
+        // Probe for SKILL.md location before downloading
+        const detectedSubpath = await findSkillSubpath(
+          parsed.repo,
+          parsed.name,
+        );
+        if (detectedSubpath === null) {
+          return { output: 'no SKILL.md found in repository' };
+        } else if (detectedSubpath !== '') {
+          // Found in a subdirectory - download only that directory
+          await downloadGithubFolder(parsed.repo, detectedSubpath, dest);
+        } else {
+          // Found at repo root - download root-level files only (skip dirs like src/, test/)
+          await downloadGithubFolder(parsed.repo, '', dest, false);
+        }
       } else if (target.startsWith('http')) {
         const result = spawnSync(
           'git',
