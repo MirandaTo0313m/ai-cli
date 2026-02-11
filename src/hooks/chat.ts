@@ -32,6 +32,14 @@ function sdkLog(event: string, data?: unknown): void {
   sdkLogStream.write(`${ts} ${event}${payload}\n`);
 }
 
+export interface TokenUsage {
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  cacheWriteTokens: number;
+  reasoningTokens: number;
+}
+
 interface StreamCallbacks {
   onStatus: (status: string) => void;
   onPending: (text: string) => void;
@@ -54,6 +62,7 @@ interface StreamCallbacks {
   ) => void;
   onTokens: (fn: (t: number) => number) => void;
   onCost: (fn: (c: number) => number) => void;
+  onUsage?: (usage: TokenUsage) => void;
   onSummary: (summary: string) => void;
   onBusy: (busy: boolean) => void;
 }
@@ -166,6 +175,29 @@ interface ProviderMeta {
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+interface UsageResult {
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
+  inputTokenDetails?: {
+    cacheReadTokens?: number;
+    cacheWriteTokens?: number;
+  };
+  outputTokenDetails?: {
+    reasoningTokens?: number;
+  };
+}
+
+function extractTokenUsage(u: UsageResult): TokenUsage {
+  return {
+    inputTokens: u.inputTokens ?? 0,
+    outputTokens: u.outputTokens ?? 0,
+    cacheReadTokens: u.inputTokenDetails?.cacheReadTokens ?? 0,
+    cacheWriteTokens: u.inputTokenDetails?.cacheWriteTokens ?? 0,
+    reasoningTokens: u.outputTokenDetails?.reasoningTokens ?? 0,
+  };
 }
 
 let spacingSequenceTurn = 0;
@@ -612,6 +644,7 @@ export async function streamChat(options: StreamOptions): Promise<Chat> {
     Promise.resolve(result.usage)
       .then((u) => {
         if (u?.totalTokens) callbacks.onTokens((t) => t + (u.totalTokens ?? 0));
+        if (u) callbacks.onUsage?.(extractTokenUsage(u as UsageResult));
       })
       .catch(() => {});
     Promise.resolve(
@@ -709,6 +742,9 @@ export async function streamChat(options: StreamOptions): Promise<Chat> {
     if (contUsage?.totalTokens) {
       callbacks.onTokens((t) => t + (contUsage.totalTokens ?? 0));
     }
+    if (contUsage) {
+      callbacks.onUsage?.(extractTokenUsage(contUsage as UsageResult));
+    }
     if (contMeta?.gateway?.cost) {
       callbacks.onCost(
         (c) => c + (Number.parseFloat(contMeta.gateway?.cost ?? '0') || 0),
@@ -767,6 +803,9 @@ export async function streamChat(options: StreamOptions): Promise<Chat> {
 
   if (usage?.totalTokens) {
     callbacks.onTokens((t) => t + (usage.totalTokens ?? 0));
+  }
+  if (usage) {
+    callbacks.onUsage?.(extractTokenUsage(usage as UsageResult));
   }
 
   if (meta?.gateway?.cost) {

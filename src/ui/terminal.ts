@@ -23,7 +23,7 @@ import {
 } from '../config/chats.js';
 import { setModel as saveModel } from '../config/index.js';
 import { getSetting } from '../config/settings.js';
-import { streamChat } from '../hooks/chat.js';
+import { streamChat, type TokenUsage } from '../hooks/chat.js';
 import { getClipboardImage } from '../utils/clipboard.js';
 import { formatError } from '../utils/errors.js';
 import { renderMarkdown } from '../utils/markdown.js';
@@ -81,6 +81,13 @@ export async function terminal(
   const messages: Message[] = [];
   let tokens = 0;
   let cost = 0;
+  const tokenUsage: TokenUsage = {
+    inputTokens: 0,
+    outputTokens: 0,
+    cacheReadTokens: 0,
+    cacheWriteTokens: 0,
+    reasoningTokens: 0,
+  };
   let summary = '';
   let busy = false;
   let abortController: AbortController | null = null;
@@ -634,11 +641,41 @@ export async function terminal(
   });
 
   let cleaningUp = false;
+  function formatTokenCount(n: number): string {
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
+    return String(n);
+  }
   function cleanup() {
     if (cleaningUp) return;
     cleaningUp = true;
     killAllProcesses();
     process.stdout.write(`\n${ansi.cursorShow}`);
+    if (tokens > 0) {
+      const parts: string[] = [];
+      if (tokenUsage.inputTokens > 0) {
+        parts.push(`in: ${formatTokenCount(tokenUsage.inputTokens)}`);
+      }
+      if (tokenUsage.outputTokens > 0) {
+        parts.push(`out: ${formatTokenCount(tokenUsage.outputTokens)}`);
+      }
+      if (tokenUsage.cacheReadTokens > 0) {
+        parts.push(`cached: ${formatTokenCount(tokenUsage.cacheReadTokens)}`);
+      }
+      if (tokenUsage.cacheWriteTokens > 0) {
+        parts.push(
+          `cache write: ${formatTokenCount(tokenUsage.cacheWriteTokens)}`,
+        );
+      }
+      if (tokenUsage.reasoningTokens > 0) {
+        parts.push(
+          `reasoning: ${formatTokenCount(tokenUsage.reasoningTokens)}`,
+        );
+      }
+      if (parts.length > 0) {
+        process.stdout.write(`${dim(`tokens: ${parts.join(' · ')}`)}\n`);
+      }
+    }
     if (chat?.id && chat.messages.length > 0) {
       process.stdout.write(
         `${dim(`session: ${chat.id} — resume with`)} ai --resume ${chat.id}\n`,
@@ -887,6 +924,7 @@ export async function terminal(
         history,
         tokens,
         cost,
+        tokenUsage,
         rl: rl,
         createRl: () => rl,
         printHeader: () => {},
@@ -1093,6 +1131,13 @@ export async function terminal(
           onCost: (fn) => {
             cost = fn(cost);
             updateTitle();
+          },
+          onUsage: (u) => {
+            tokenUsage.inputTokens += u.inputTokens;
+            tokenUsage.outputTokens += u.outputTokens;
+            tokenUsage.cacheReadTokens += u.cacheReadTokens;
+            tokenUsage.cacheWriteTokens += u.cacheWriteTokens;
+            tokenUsage.reasoningTokens += u.reasoningTokens;
           },
           onSummary: (s) => {
             summary = s;
