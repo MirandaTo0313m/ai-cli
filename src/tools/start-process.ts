@@ -1,7 +1,11 @@
 import { tool } from 'ai';
 import { z } from 'zod';
 import { log as debug } from '../utils/debug.js';
-import { getProcessLogs, startManagedProcess } from '../utils/processes.js';
+import {
+  getProcessLogs,
+  setProcessUrls,
+  startManagedProcess,
+} from '../utils/processes.js';
 
 const URL_RE = /https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0):\d+/gi;
 
@@ -55,6 +59,10 @@ export const startProcess = tool({
     const proc = startManagedProcess(command);
 
     const { urls, logs } = await collectUrls(proc.pid);
+
+    if (urls.length > 0) {
+      setProcessUrls(proc.pid, urls);
+    }
 
     const parts: string[] = [`${command} (pid: ${proc.pid})`];
     if (urls.length > 0) {
