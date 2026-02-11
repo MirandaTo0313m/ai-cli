@@ -70,7 +70,9 @@ describe('formatError', () => {
 
   test('handles tool failed errors', () => {
     const error = new Error('tool failed: readFile');
-    expect(formatError(error)).toBe('tool failed. try again or /model to switch');
+    expect(formatError(error)).toBe(
+      'tool failed. try again or /model to switch',
+    );
   });
 
   test('handles type validation errors by message', () => {
