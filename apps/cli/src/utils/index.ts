@@ -1,3 +1,5 @@
+import { DEFAULT_MODEL } from './constants.js';
+
 export async function readStdin(): Promise<string> {
   const chunks: string[] = [];
   for await (const chunk of process.stdin) {
@@ -15,7 +17,7 @@ Usage:
   ai -m <model> <message>
 
 Options:
-  -m, --model   Specify AI model (default: anthropic/claude-sonnet-4.5)
+  -m, --model   Specify AI model (default: ${DEFAULT_MODEL})
   --image       Attach an image file (png, jpg, gif, webp)
   -l, --list    List available models
   -h, --help    Show this help message

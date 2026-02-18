@@ -19,6 +19,18 @@ const defaults: Config = {
   search: 'perplexity',
 };
 
+let cachedConfig: Config | null = null;
+let cachedMtimeMs: number | null = null;
+
+function checkConfigFile(): { changed: boolean; mtimeMs: number | null } {
+  try {
+    const mtimeMs = fs.statSync(CONFIG_FILE).mtimeMs;
+    return { changed: mtimeMs !== cachedMtimeMs, mtimeMs };
+  } catch {
+    return { changed: true, mtimeMs: null };
+  }
+}
+
 function migrateOldConfig(): Config | null {
   const home = os.homedir();
   const oldRc = path.join(home, '.airc');
@@ -56,7 +68,10 @@ function migrateOldConfig(): Config | null {
 }
 
 export function getConfig(): Config {
+  const check = checkConfigFile();
+  if (cachedConfig && !check.changed) return cachedConfig;
   ensureBaseDir();
+  let result: Config;
   try {
     if (fs.existsSync(CONFIG_FILE)) {
       const data = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf-8'));
@@ -71,19 +86,27 @@ export function getConfig(): Config {
         }
       }
 
-      return { ...defaults, ...data };
+      result = { ...defaults, ...data };
+      cachedConfig = result;
+      cachedMtimeMs = check.mtimeMs;
+      return result;
     }
 
     const migrated = migrateOldConfig();
     if (migrated) {
-      const merged = { ...defaults, ...migrated };
-      fs.writeFileSync(CONFIG_FILE, JSON.stringify(merged, null, 2), 'utf-8');
-      return merged;
+      result = { ...defaults, ...migrated };
+      fs.writeFileSync(CONFIG_FILE, JSON.stringify(result, null, 2), 'utf-8');
+      cachedConfig = result;
+      cachedMtimeMs = check.mtimeMs;
+      return result;
     }
   } catch (e) {
     logError(e);
   }
-  return { ...defaults };
+  result = { ...defaults };
+  cachedConfig = result;
+  cachedMtimeMs = null;
+  return result;
 }
 
 export function setConfig(config: Partial<Config>): void {
@@ -91,6 +114,8 @@ export function setConfig(config: Partial<Config>): void {
   const current = getConfig();
   const merged = { ...current, ...config };
   fs.writeFileSync(CONFIG_FILE, JSON.stringify(merged, null, 2), 'utf-8');
+  cachedConfig = null;
+  cachedMtimeMs = null;
 }
 
 export function getAliases(): Record<string, string> {
