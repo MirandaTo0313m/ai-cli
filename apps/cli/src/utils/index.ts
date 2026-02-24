@@ -25,9 +25,9 @@ Options:
   -p, --print    Headless mode: full agent, output to stdout, then exit
   --json         Structured JSON output (implies --print)
   --system       Append custom text to the system prompt
-  --force        Auto-approve all tool actions (no confirmations)
-  --no-save      Don't persist the chat to history
-  --timeout <s>  Abort after N seconds (headless only)
+  --force        Auto-approve all tool actions (--print only)
+  --no-save      Don't persist the chat to history (--print only)
+  --timeout <s>  Abort after N seconds (--print only)
   -l, --list     List available models
   --no-color     Disable color output
   -v, --version  Show version
@@ -45,5 +45,6 @@ Examples:
   git diff | ai -p "review this for bugs"
   ai -p --timeout 60 "fix type errors"
   ai -p -r <chatId> "continue"
+  ai --system "respond in Spanish" "hola"
   ai -l`);
 }

@@ -25,6 +25,7 @@ ai -m gpt-5 "hello"          # use specific model
 ai --image ./img.png "what?" # analyze image (single message)
 ai -l                        # list models
 echo "explain this" | ai     # pipe input
+ai --system "respond in Spanish" "hola"  # custom system prompt
 
 # in interactive mode, ctrl+v to paste image from clipboard
 ```
@@ -37,7 +38,6 @@ Run the full agent non-interactively. Useful for CI pipelines, scripts, and auto
 ai -p "explain this codebase"                          # output to stdout
 ai -p --json "write tests for src/auth.ts" > result.json  # structured JSON
 ai -p --force "fix all type errors"                    # skip confirmations
-ai -p --system "You are a security auditor" "audit src/"   # custom instructions
 ai -p --no-save "what dependencies are outdated?"      # ephemeral (no history)
 git diff | ai -p "review this for bugs"                # pipe + headless
 ai -p -m gpt-5 --force "refactor the database layer"  # combine flags
@@ -81,9 +81,9 @@ On error, includes an `error` field with the message.
 - `-p, --print` - headless mode: full agent, output to stdout, then exit
 - `--json` - structured JSON output (implies --print)
 - `--system` - append custom text to the system prompt
-- `--force` - auto-approve all tool actions (no confirmations)
-- `--no-save` - don't persist the chat to history
-- `--timeout` - abort after N seconds (headless only)
+- `--force` - auto-approve all tool actions (--print only)
+- `--no-save` - don't persist the chat to history (--print only)
+- `--timeout` - abort after N seconds (--print only)
 - `-l, --list` - list models
 - `--no-color` - disable color output
 - `-v, --version` - show version
