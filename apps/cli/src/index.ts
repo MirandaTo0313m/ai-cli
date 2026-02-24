@@ -94,7 +94,11 @@ async function main() {
       process.env.AI_GATEWAY_API_KEY = apiKey;
       globalThis.AI_SDK_LOG_WARNINGS = false;
       console.log();
-      await inkCommand({ model: savedModel, version });
+      await inkCommand({
+        model: savedModel,
+        version,
+        system: args['--system'],
+      });
     }
     return;
   }
@@ -118,13 +122,10 @@ async function main() {
 
   if (
     !headless &&
-    (args['--force'] ||
-      args['--timeout'] ||
-      args['--no-save'] ||
-      args['--system'])
+    (args['--force'] || args['--timeout'] || args['--no-save'])
   ) {
     console.error(
-      '--force, --timeout, --no-save, and --system require --print or --json',
+      '--force, --timeout, and --no-save require --print or --json',
     );
     process.exit(1);
   }
@@ -135,6 +136,7 @@ async function main() {
       version,
       resume: args['--resume'],
       planMode: args['--plan'],
+      system: args['--system'],
     });
     return;
   }
@@ -152,6 +154,7 @@ async function main() {
           model,
           version,
           planMode: args['--plan'],
+          system: args['--system'],
         });
         return;
       }

@@ -105,12 +105,15 @@ const details: Record<string, string> = {
   ai -p "message"              full agent, output to stdout
   ai -p --json "message"       structured JSON output
   ai -p --force "message"      auto-approve all tool actions
-  ai -p --system "..." "msg"   append custom system prompt
   ai -p --no-save "message"    don't save chat history
   ai -p --plan "message"       plan mode (read-only tools)
   ai -p -r <id> "message"     resume a previous session
   ai -p --timeout 60 "msg"    abort after N seconds
-  git diff | ai -p "review"    pipe input + headless`,
+  git diff | ai -p "review"    pipe input + headless
+
+  --system works in both headless and interactive mode:
+  ai --system "..." "msg"      append custom system prompt
+  ai --system "..." -p "msg"   also works in headless`,
 };
 
 export const help: CommandHandler = (_ctx, args) => {

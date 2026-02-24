@@ -102,7 +102,12 @@ export async function printCommand(options: PrintOptions): Promise<void> {
     throw new Error('unreachable');
   }
 
-  if (timeout !== undefined && (Number.isNaN(timeout) || timeout <= 0)) {
+  const timeoutSec = timeout !== undefined ? Math.floor(timeout) : undefined;
+
+  if (
+    timeoutSec !== undefined &&
+    (Number.isNaN(timeoutSec) || timeoutSec <= 0)
+  ) {
     emitErrorAndExit('timeout must be a positive number of seconds');
   }
 
@@ -130,6 +135,7 @@ export async function printCommand(options: PrintOptions): Promise<void> {
   let tokens = 0;
   let cost = 0;
   let output = '';
+  let outputEndsWithNewline = false;
   let stuck = false;
   let usage: TokenUsage | null = null;
 
@@ -151,7 +157,9 @@ export async function printCommand(options: PrintOptions): Promise<void> {
     restoreHistory({ chat: loaded }, history);
   }
 
-  const abortSignal = timeout ? AbortSignal.timeout(timeout * 1000) : undefined;
+  const abortSignal = timeoutSec
+    ? AbortSignal.timeout(timeoutSec * 1000)
+    : undefined;
 
   const trackOutput = (content: string) => {
     if (!content) return;
@@ -159,11 +167,15 @@ export async function printCommand(options: PrintOptions): Promise<void> {
       output = content;
     } else if (content !== output) {
       if (output && content.startsWith(output)) {
-        process.stdout.write(content.slice(output.length));
-      } else if (output) {
+        const chunk = content.slice(output.length);
+        process.stdout.write(chunk);
+        outputEndsWithNewline = chunk.endsWith('\n');
+      } else if (output && !outputEndsWithNewline) {
         process.stdout.write(`\n${content}`);
+        outputEndsWithNewline = content.endsWith('\n');
       } else {
         process.stdout.write(content);
+        outputEndsWithNewline = content.endsWith('\n');
       }
       output = content;
     }
@@ -177,6 +189,7 @@ export async function printCommand(options: PrintOptions): Promise<void> {
     onPending: (text) => {
       if (!text) {
         output = '';
+        outputEndsWithNewline = false;
         return;
       }
       trackOutput(text);
@@ -257,7 +270,7 @@ export async function printCommand(options: PrintOptions): Promise<void> {
       );
     }
     const errorMsg = isTimeout
-      ? `timed out after ${timeout}s`
+      ? `timed out after ${timeoutSec}s`
       : formatError(error);
     emitErrorAndExit(errorMsg, {
       tokens,

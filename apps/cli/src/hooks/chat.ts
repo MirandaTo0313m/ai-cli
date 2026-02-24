@@ -7,7 +7,7 @@ import {
   stepCountIs,
   streamText,
 } from 'ai';
-import { type Chat, getOrCreateChat } from '../config/chats.js';
+import { type Chat, generateId, getOrCreateChat } from '../config/chats.js';
 import { getReadOnlyTools, getTools, loadMcpTools } from '../tools/index.js';
 import { AI_CLI_HEADERS } from '../utils/constants.js';
 import {
@@ -69,6 +69,7 @@ export interface StreamCallbacks {
   ) => void;
   onTokens: (fn: (t: number) => number) => void;
   onCost: (fn: (c: number) => number) => void;
+  /** Report token usage breakdown for the completed step. */
   onUsage: (usage: TokenUsage) => void;
   onSummary: (summary: string) => void;
   onBusy: (busy: boolean) => void;
@@ -218,7 +219,7 @@ export async function streamChat(options: StreamOptions): Promise<Chat> {
     options.chat ??
     (options.save === false
       ? {
-          id: '',
+          id: generateId(),
           title: 'New chat',
           messages: [] as Chat['messages'],
           model,
