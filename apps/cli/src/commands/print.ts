@@ -36,10 +36,23 @@ interface HeadlessResult {
 }
 
 function exit(code: number): void {
-  if (process.stdout.writableNeedDrain) {
-    process.stdout.once('drain', () => process.exit(code));
-  } else {
+  const needsDrain =
+    process.stdout.writableNeedDrain || process.stderr.writableNeedDrain;
+  if (!needsDrain) {
     process.exit(code);
+    return;
+  }
+  let remaining = 0;
+  const done = () => {
+    if (--remaining === 0) process.exit(code);
+  };
+  if (process.stdout.writableNeedDrain) {
+    remaining++;
+    process.stdout.once('drain', done);
+  }
+  if (process.stderr.writableNeedDrain) {
+    remaining++;
+    process.stderr.once('drain', done);
   }
 }
 
@@ -58,16 +71,25 @@ export async function printCommand(options: PrintOptions): Promise<void> {
     version,
   } = options;
 
-  if (timeout !== undefined && timeout <= 0) {
-    const msg = 'timeout must be a positive number of seconds';
+  const emitErrorAndExit = (
+    msg: string,
+    opts?: {
+      tokens?: number;
+      cost?: number;
+      usage?: TokenUsage;
+      chatId?: string;
+    },
+  ): void => {
     if (json) {
       const result: HeadlessResult = {
         output: '',
         model,
-        tokens: 0,
-        cost: 0,
+        tokens: opts?.tokens ?? 0,
+        cost: opts?.cost ?? 0,
         exitCode: 1,
         error: msg,
+        chatId: opts?.chatId,
+        usage: opts?.usage,
       };
       process.stderr.write(`error: ${msg}\n`);
       process.stdout.write(`${JSON.stringify(result)}\n`);
@@ -75,6 +97,10 @@ export async function printCommand(options: PrintOptions): Promise<void> {
       process.stderr.write(`${msg}\n`);
     }
     exit(1);
+  };
+
+  if (timeout !== undefined && timeout <= 0) {
+    emitErrorAndExit('timeout must be a positive number of seconds');
     return;
   }
 
@@ -88,22 +114,7 @@ export async function printCommand(options: PrintOptions): Promise<void> {
       try {
         pendingImage = loadImage(image);
       } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        if (json) {
-          const result: HeadlessResult = {
-            output: '',
-            model,
-            tokens: 0,
-            cost: 0,
-            exitCode: 1,
-            error: msg,
-          };
-          process.stderr.write(`error: ${msg}\n`);
-          process.stdout.write(`${JSON.stringify(result)}\n`);
-        } else {
-          process.stderr.write(`${msg}\n`);
-        }
-        exit(1);
+        emitErrorAndExit(e instanceof Error ? e.message : String(e));
         return;
       }
     }
@@ -127,32 +138,14 @@ export async function printCommand(options: PrintOptions): Promise<void> {
       const { loadChat } = await import('../config/chats.js');
       const loaded = loadChat(resume);
       if (!loaded) {
-        const msg = `session ${resume} not found`;
-        if (json) {
-          const result: HeadlessResult = {
-            output: '',
-            model,
-            tokens: 0,
-            cost: 0,
-            exitCode: 1,
-            error: msg,
-          };
-          process.stderr.write(`error: ${msg}\n`);
-          process.stdout.write(`${JSON.stringify(result)}\n`);
-        } else {
-          process.stderr.write(`${msg}\n`);
-        }
-        exit(1);
+        emitErrorAndExit(`session ${resume} not found`);
         return;
       }
       existingChat = loaded;
       summary = loaded.summary || '';
       initialTokens = loaded.tokens || 0;
       const { restoreHistory } = await import('./slash/chat.js');
-      restoreHistory(
-        { chat: loaded },
-        history as { role: string; content: unknown }[],
-      );
+      restoreHistory({ chat: loaded }, history);
     } else if (!save) {
       existingChat = {
         id: generateId(),
@@ -173,8 +166,10 @@ export async function printCommand(options: PrintOptions): Promise<void> {
     const trackOutput = (content: string) => {
       if (json) {
         output = content;
-      } else if (content.length > output.length) {
-        process.stdout.write(content.slice(output.length));
+      } else if (content !== output) {
+        if (content.startsWith(output)) {
+          process.stdout.write(content.slice(output.length));
+        }
         output = content;
       }
     };
@@ -185,8 +180,10 @@ export async function printCommand(options: PrintOptions): Promise<void> {
         if (!json && !status) spinner?.stop();
       },
       onPending: (text) => {
-        if (!json && text.length > output.length) {
-          process.stdout.write(text.slice(output.length));
+        if (!json && text !== output) {
+          if (text.startsWith(output)) {
+            process.stdout.write(text.slice(output.length));
+          }
           output = text;
         }
       },
@@ -263,22 +260,12 @@ export async function printCommand(options: PrintOptions): Promise<void> {
       const errorMsg = isTimeout
         ? `timed out after ${timeout}s`
         : formatError(error);
-      if (json) {
-        const result: HeadlessResult = {
-          output: '',
-          model,
-          tokens,
-          cost,
-          exitCode: 1,
-          error: errorMsg,
-          usage: usage ?? undefined,
-        };
-        process.stderr.write(`error: ${errorMsg}\n`);
-        process.stdout.write(`${JSON.stringify(result)}\n`);
-      } else {
-        process.stderr.write(`${errorMsg}\n`);
-      }
-      exit(1);
+      emitErrorAndExit(errorMsg, {
+        tokens,
+        cost,
+        usage: usage ?? undefined,
+        chatId: existingChat?.id,
+      });
       return;
     }
 

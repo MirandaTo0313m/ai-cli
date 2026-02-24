@@ -1,3 +1,4 @@
+import type { ModelMessage } from 'ai';
 import {
   type Chat,
   createChat,
@@ -96,7 +97,7 @@ export const chat: CommandHandler = (ctx, args) => {
 
 export function restoreHistory(
   ctx: { chat: { messages: { role: string; content: string }[] } },
-  history: { role: string; content: unknown }[],
+  history: ModelMessage[],
 ): { user: string[]; assistant: string[] } {
   const restored = { user: [] as string[], assistant: [] as string[] };
   for (const msg of ctx.chat.messages) {
