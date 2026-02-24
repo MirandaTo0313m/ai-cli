@@ -7,7 +7,12 @@ import {
   stepCountIs,
   streamText,
 } from 'ai';
-import { type Chat, getOrCreateChat, saveChat } from '../config/chats.js';
+import {
+  type Chat,
+  generateId,
+  getOrCreateChat,
+  saveChat,
+} from '../config/chats.js';
 import { getReadOnlyTools, getTools, loadMcpTools } from '../tools/index.js';
 import { AI_CLI_HEADERS } from '../utils/constants.js';
 import {
@@ -17,6 +22,7 @@ import {
 } from '../utils/context.js';
 import { log as debug } from '../utils/debug.js';
 import { logError } from '../utils/errorlog.js';
+import type { PendingImage } from '../utils/image.js';
 import { extractJsonStringValue } from '../utils/json-parse.js';
 import { buildSystemPrompt, toolActions } from '../utils/prompt.js';
 import { smartStop } from '../utils/stop-condition.js';
@@ -68,14 +74,10 @@ export interface StreamCallbacks {
   ) => void;
   onTokens: (fn: (t: number) => number) => void;
   onCost: (fn: (c: number) => number) => void;
-  onUsage?: (usage: TokenUsage) => void;
+  /** Report token usage breakdown for the completed step. */
+  onUsage: (usage: TokenUsage) => void;
   onSummary: (summary: string) => void;
   onBusy: (busy: boolean) => void;
-}
-
-interface PendingImage {
-  data: string;
-  mimeType: string;
 }
 
 interface StreamOptions {
@@ -91,6 +93,8 @@ interface StreamOptions {
   image?: PendingImage | null;
   hasTools?: boolean;
   planMode?: boolean;
+  appendSystem?: string;
+  save?: boolean;
 }
 
 interface ToolInput {
@@ -216,7 +220,20 @@ let spacingSequenceTurn = 0;
 
 export async function streamChat(options: StreamOptions): Promise<Chat> {
   const { model, message, history, tokens, summary, pm, callbacks } = options;
-  const chat = options.chat ?? getOrCreateChat(model);
+  const chat =
+    options.chat ??
+    (options.save === false
+      ? {
+          id: generateId(),
+          title: 'New chat',
+          messages: [] as Chat['messages'],
+          model,
+          tokens: 0,
+          cost: 0,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        }
+      : getOrCreateChat(model));
 
   if (process.env.AI_CLI_TEST_SCENARIO === 'spacing-running') {
     callbacks.onBusy(true);
@@ -294,7 +311,7 @@ export async function streamChat(options: StreamOptions): Promise<Chat> {
       chat.summary = s;
       chat.messages = [];
       chat.tokens = Math.round(s.length / 4);
-      saveChat(chat);
+      if (options.save !== false) saveChat(chat);
       callbacks.onMessage('info', 'context compressed');
     }
   }
@@ -303,6 +320,7 @@ export async function streamChat(options: StreamOptions): Promise<Chat> {
 
   const sys = buildSystemPrompt(pm, summary, message, {
     planMode: options.planMode,
+    appendSystem: options.appendSystem,
   });
 
   type UserContentPart =
@@ -705,7 +723,7 @@ export async function streamChat(options: StreamOptions): Promise<Chat> {
     Promise.resolve(result.usage)
       .then((u) => {
         if (u?.totalTokens) callbacks.onTokens((t) => t + (u.totalTokens ?? 0));
-        if (u) callbacks.onUsage?.(extractTokenUsage(u as UsageResult));
+        if (u) callbacks.onUsage(extractTokenUsage(u as UsageResult));
       })
       .catch((e) => debug(`usage resolve error: ${e}`));
     Promise.resolve(
@@ -804,7 +822,7 @@ export async function streamChat(options: StreamOptions): Promise<Chat> {
       callbacks.onTokens((t) => t + (contUsage.totalTokens ?? 0));
     }
     if (contUsage) {
-      callbacks.onUsage?.(extractTokenUsage(contUsage as UsageResult));
+      callbacks.onUsage(extractTokenUsage(contUsage as UsageResult));
     }
     if (contMeta?.gateway?.cost) {
       callbacks.onCost(
@@ -866,7 +884,7 @@ export async function streamChat(options: StreamOptions): Promise<Chat> {
     callbacks.onTokens((t) => t + (usage.totalTokens ?? 0));
   }
   if (usage) {
-    callbacks.onUsage?.(extractTokenUsage(usage as UsageResult));
+    callbacks.onUsage(extractTokenUsage(usage as UsageResult));
   }
 
   if (meta?.gateway?.cost) {
