@@ -17,6 +17,7 @@ import {
 } from '../utils/context.js';
 import { log as debug } from '../utils/debug.js';
 import { logError } from '../utils/errorlog.js';
+import type { PendingImage } from '../utils/image.js';
 import { extractJsonStringValue } from '../utils/json-parse.js';
 import { buildSystemPrompt, toolActions } from '../utils/prompt.js';
 import { smartStop } from '../utils/stop-condition.js';
@@ -73,11 +74,6 @@ export interface StreamCallbacks {
   onBusy: (busy: boolean) => void;
 }
 
-interface PendingImage {
-  data: string;
-  mimeType: string;
-}
-
 interface StreamOptions {
   model: string;
   message: string;
@@ -92,6 +88,7 @@ interface StreamOptions {
   hasTools?: boolean;
   planMode?: boolean;
   appendSystem?: string;
+  save?: boolean;
 }
 
 interface ToolInput {
@@ -295,7 +292,7 @@ export async function streamChat(options: StreamOptions): Promise<Chat> {
       chat.summary = s;
       chat.messages = [];
       chat.tokens = Math.round(s.length / 4);
-      saveChat(chat);
+      if (options.save !== false) saveChat(chat);
       callbacks.onMessage('info', 'context compressed');
     }
   }

@@ -16,6 +16,15 @@ export function setForceMode(enabled: boolean): void {
   forceMode = enabled;
 }
 
+export async function withForceMode<T>(fn: () => Promise<T>): Promise<T> {
+  forceMode = true;
+  try {
+    return await fn();
+  } finally {
+    forceMode = false;
+  }
+}
+
 // Queue to serialize concurrent confirm() calls so only one prompt
 // is visible at a time (the AI SDK fires tool executions in parallel).
 let queue: Promise<boolean> = Promise.resolve(true);
