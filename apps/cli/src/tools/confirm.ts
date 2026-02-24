@@ -10,11 +10,9 @@ export interface ConfirmOpts {
 let handler: ((action: string, opts?: ConfirmOpts) => Promise<boolean>) | null =
   null;
 
+// Module-level flag, consistent with the handler pattern above.
+// Safe because the CLI runs a single command per process.
 let forceMode = false;
-
-export function setForceMode(enabled: boolean): void {
-  forceMode = enabled;
-}
 
 export async function withForceMode<T>(fn: () => Promise<T>): Promise<T> {
   forceMode = true;

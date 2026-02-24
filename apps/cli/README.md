@@ -1,22 +1,22 @@
 # ai-cli
 
-minimal terminal AI assistant
+Minimal terminal AI assistant.
 
-## install
+## Install
 
 ```bash
 npm install -g ai-cli
 ```
 
-## setup
+## Setup
 
 ```bash
 ai init
 ```
 
-get your API key from [Vercel AI Gateway](https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai%2Fapi-keys&title=Go+to+AI+Gateway)
+Get your API key from [Vercel AI Gateway](https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai%2Fapi-keys&title=Go+to+AI+Gateway)
 
-## usage
+## Usage
 
 ```bash
 ai                           # interactive mode
@@ -29,9 +29,9 @@ echo "explain this" | ai     # pipe input
 # in interactive mode, ctrl+v to paste image from clipboard
 ```
 
-## headless mode
+## Headless Mode
 
-run the full agent non-interactively. useful for CI pipelines, scripts, and automation.
+Run the full agent non-interactively. Useful for CI pipelines, scripts, and automation.
 
 ```bash
 ai -p "explain this codebase"                          # output to stdout
@@ -46,9 +46,9 @@ ai -p -r <chatId> "continue"                           # resume a session
 ai -p --timeout 60 "fix type errors"                   # abort after 60s
 ```
 
-exit codes: `0` success, `1` error, `2` agent stuck.
+Exit codes: `0` success, `1` error, `2` agent stuck.
 
-json output format:
+JSON output format:
 
 ```json
 {
@@ -68,9 +68,9 @@ json output format:
 }
 ```
 
-on error, includes an `error` field with the message.
+On error, includes an `error` field with the message.
 
-## options
+## Options
 
 - `-m, --model` - model (default: anthropic/claude-sonnet-4.5)
 - `--image` - attach image file
@@ -87,30 +87,30 @@ on error, includes an `error` field with the message.
 - `-v, --version` - show version
 - `-h, --help` - help
 
-## commands
+## Commands
 
-### chat
+### Chat
 - `/new` - new chat
 - `/chats` - list chats
 - `/chat <n>` - load chat
 - `/delete` - delete chat
 - `/clear` - clear screen
 
-### files
+### Files
 - `/copy` - copy response
 - `/rollback` - undo changes
 
-### context
+### Context
 - `/usage` - token usage and cost
 - `/compress` - compress history
 - `/plan` - toggle plan mode (think before acting)
 - `/review` - review loop (auto-reviews changes for bugs)
 
-### model
+### Model
 - `/model` - select model interactively
 - `/model <query>` - switch to matching model
 
-### system
+### System
 - `/info` - version, model, balance, storage
 - `/processes` - background processes
 - `/memory` - saved memories
@@ -121,11 +121,11 @@ on error, includes an `error` field with the message.
 - `/purge` - delete all chats
 - `/help` - commands
 
-## skills
+## Skills
 
-skills extend the AI with specialized capabilities. they follow the [Agent Skills](https://agentskills.io) open standard.
+Skills extend the AI with specialized capabilities. They follow the [Agent Skills](https://agentskills.io) open standard.
 
-### managing skills
+### Managing Skills
 
 ```bash
 /skills                    # list installed
@@ -136,9 +136,9 @@ skills extend the AI with specialized capabilities. they follow the [Agent Skill
 /skills path               # show directory
 ```
 
-### installing skills
+### Installing Skills
 
-shorthand (like skills.sh):
+Shorthand (like skills.sh):
 
 ```bash
 /skills add vercel-labs/agent-skills/skills/react-best-practices
@@ -146,34 +146,34 @@ shorthand (like skills.sh):
 /skills add owner/repo
 ```
 
-full github url:
+Full GitHub URL:
 
 ```bash
 /skills add https://github.com/anthropics/skills/tree/main/skills/pdf
 ```
 
-local path:
+Local path:
 
 ```bash
 /skills add /path/to/skill
 ```
 
-### creating skills
+### Creating Skills
 
 ```bash
 /skills create my-skill
 ```
 
-creates `~/.ai-cli/skills/my-skill/SKILL.md`
+Creates `~/.ai-cli/skills/my-skill/SKILL.md`
 
-## rules
+## Rules
 
-custom instructions loaded into every conversation:
+Custom instructions loaded into every conversation:
 
 - `~/.ai-cli/AGENTS.md` - global rules
 - `./AGENTS.md` - project rules
 
-manage with `/rules`:
+Manage with `/rules`:
 
 ```bash
 /rules show    # view rules
@@ -182,13 +182,13 @@ manage with `/rules`:
 /rules path    # show path
 ```
 
-## review loop
+## Review Loop
 
-after the coding agent finishes making file changes, a separate review agent automatically inspects all modifications for severe and high-priority bugs. if it finds issues, it fixes them and re-reviews, up to a configurable number of passes.
+After the coding agent finishes making file changes, a separate review agent automatically inspects all modifications for severe and high-priority bugs. If it finds issues, it fixes them and re-reviews, up to a configurable number of passes.
 
-the review agent runs in its own isolated context with a strict system prompt -- it has no attachment to the code it's reviewing and is intentionally more critical than the coding agent.
+The review agent runs in its own isolated context with a strict system prompt -- it has no attachment to the code it's reviewing and is intentionally more critical than the coding agent.
 
-enabled by default. toggle with:
+Enabled by default. Toggle with:
 
 ```bash
 /review on     # enable
@@ -196,7 +196,7 @@ enabled by default. toggle with:
 /review        # show status
 ```
 
-configure max iterations in `~/.ai-cli/config.json`:
+Configure max iterations in `~/.ai-cli/config.json`:
 
 ```json
 {
@@ -207,9 +207,9 @@ configure max iterations in `~/.ai-cli/config.json`:
 }
 ```
 
-## tools
+## Tools
 
-the AI can:
+The AI can:
 
 **files** - read, write, edit, delete, copy, rename, search
 
@@ -219,9 +219,9 @@ the AI can:
 
 **web** - search, fetch urls, check weather
 
-## mcp
+## MCP
 
-connect to external tools via [model context protocol](https://modelcontextprotocol.io):
+Connect to external tools via [Model Context Protocol](https://modelcontextprotocol.io):
 
 ```bash
 /mcp                                    # list servers
@@ -231,15 +231,15 @@ connect to external tools via [model context protocol](https://modelcontextproto
 /mcp reload                             # reconnect all
 ```
 
-### transports
+### Transports
 
 - **http** - HTTP endpoint
 - **sse** - server-sent events
 - **stdio** - spawn local process
 
-### config
+### Config
 
-servers stored in `~/.ai-cli/mcp.json`:
+Servers stored in `~/.ai-cli/mcp.json`:
 
 ```json
 {
@@ -257,13 +257,13 @@ servers stored in `~/.ai-cli/mcp.json`:
 }
 ```
 
-environment variables expand with `${VAR}` or `${VAR:-default}`.
+Environment variables expand with `${VAR}` or `${VAR:-default}`.
 
-mcp tools are prefixed with server name (e.g., `weather_get_forecast`).
+MCP tools are prefixed with server name (e.g., `weather_get_forecast`).
 
-## models
+## Models
 
-supports fuzzy matching:
+Supports fuzzy matching:
 
 ```bash
 ai -m claude-4       # → anthropic/claude-sonnet-4
@@ -271,9 +271,9 @@ ai -m gpt-5          # → openai/gpt-5
 ai -m sonnet         # → finds sonnet model
 ```
 
-## storage
+## Storage
 
-all data in `~/.ai-cli/`:
+All data in `~/.ai-cli/`:
 
 ```
 ~/.ai-cli/
@@ -285,9 +285,9 @@ all data in `~/.ai-cli/`:
 └── AGENTS.md        # global rules
 ```
 
-## environment
+## Environment
 
-alternatively set your API key:
+Alternatively set your API key:
 
 ```bash
 export AI_GATEWAY_API_KEY=your-key
