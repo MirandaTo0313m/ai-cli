@@ -100,6 +100,21 @@ const details: Record<string, string> = {
 
   info: `/info
   shows version, current model, balance, storage, and feedback link`,
+
+  print: `headless mode (ai -p)
+  ai -p "message"              full agent, output to stdout
+  ai -p --json "message"       structured JSON output
+  ai -p --force "message"      auto-approve all tool actions
+  ai -p --no-save "message"    don't save chat history
+  ai -p --plan "message"       plan mode (read-only tools)
+  ai -p -r <id> "message"     resume a previous session
+  ai -p --timeout 60 "msg"    abort after N seconds
+  ai -p -q "message"           suppress stderr status output
+  git diff | ai -p "review"    pipe input + headless
+
+  --system works in both headless and interactive mode:
+  ai --system "..." "msg"      append custom system prompt
+  ai --system "..." -p "msg"   also works in headless`,
 };
 
 export const help: CommandHandler = (_ctx, args) => {
@@ -134,6 +149,9 @@ export const help: CommandHandler = (_ctx, args) => {
     '  /alias       shortcuts',
     '  /info        info',
     '  exit         quit',
+    '',
+    'headless mode:',
+    '  ai -p        run with full agent, output to stdout',
     '',
     'ctrl+v to paste images',
     '/help <cmd> for details',

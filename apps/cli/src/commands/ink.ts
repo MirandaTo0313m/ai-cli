@@ -5,10 +5,12 @@ interface Options {
   version: string;
   resume?: string;
   planMode?: boolean;
+  system?: string;
 }
 
 export async function inkCommand(options: Options): Promise<void> {
   await terminal(options.model, options.version, options.resume, {
     planMode: options.planMode,
+    system: options.system,
   });
 }

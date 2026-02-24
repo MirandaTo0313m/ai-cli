@@ -3,6 +3,7 @@ import { chatCommand } from './commands/chat.js';
 import { initCommand } from './commands/init.js';
 import { inkCommand } from './commands/ink.js';
 import { listModels } from './commands/models.js';
+import { printCommand } from './commands/print.js';
 import { getApiKey, getModel } from './config/index.js';
 import { getSetting } from './config/settings.js';
 import { DEFAULT_MODEL } from './utils/constants.js';
@@ -21,6 +22,13 @@ interface Args {
   '--no-color'?: boolean;
   '--resume'?: string;
   '--plan'?: boolean;
+  '--print'?: boolean;
+  '--json'?: boolean;
+  '--system'?: string;
+  '--force'?: boolean;
+  '--no-save'?: boolean;
+  '--timeout'?: number;
+  '--quiet'?: boolean;
   _: string[];
 }
 
@@ -36,11 +44,20 @@ async function main() {
       '--no-color': Boolean,
       '--resume': String,
       '--plan': Boolean,
+      '--print': Boolean,
+      '--json': Boolean,
+      '--system': String,
+      '--force': Boolean,
+      '--no-save': Boolean,
+      '--timeout': Number,
+      '--quiet': Boolean,
       '-m': '--model',
       '-h': '--help',
       '-v': '--version',
       '-l': '--list',
       '-r': '--resume',
+      '-p': '--print',
+      '-q': '--quiet',
     }) as Args;
   } catch (err: unknown) {
     if (err instanceof Error) {
@@ -80,7 +97,11 @@ async function main() {
       process.env.AI_GATEWAY_API_KEY = apiKey;
       globalThis.AI_SDK_LOG_WARNINGS = false;
       console.log();
-      await inkCommand({ model: savedModel, version });
+      await inkCommand({
+        model: savedModel,
+        version,
+        system: args['--system'],
+      });
     }
     return;
   }
@@ -97,12 +118,28 @@ async function main() {
   const modelArg = args['--model'];
   const model = modelArg ? await resolveModel(modelArg) : savedModel;
 
-  if (args['--resume'] && process.stdin.isTTY) {
+  const headless = args['--print'] || args['--json'];
+
+  if (
+    !headless &&
+    (args['--force'] ||
+      args['--timeout'] ||
+      args['--no-save'] ||
+      args['--quiet'])
+  ) {
+    console.error(
+      '--force, --timeout, --no-save, and --quiet require --print or --json',
+    );
+    process.exit(1);
+  }
+
+  if (args['--resume'] && !headless && process.stdin.isTTY) {
     await inkCommand({
       model,
       version,
       resume: args['--resume'],
       planMode: args['--plan'],
+      system: args['--system'],
     });
     return;
   }
@@ -115,17 +152,36 @@ async function main() {
     }
 
     if (!message) {
-      if (process.stdin.isTTY) {
+      if (!headless && process.stdin.isTTY) {
         await inkCommand({
           model,
           version,
           planMode: args['--plan'],
+          system: args['--system'],
         });
         return;
       }
       console.error('no message');
       process.exit(1);
     }
+  }
+
+  if (headless) {
+    await printCommand({
+      message,
+      model,
+      image: args['--image'],
+      json: args['--json'],
+      force: args['--force'],
+      save: !args['--no-save'],
+      quiet: args['--quiet'],
+      system: args['--system'],
+      plan: args['--plan'],
+      resume: args['--resume'],
+      timeout: args['--timeout'],
+      version,
+    });
+    return;
   }
 
   await chatCommand({

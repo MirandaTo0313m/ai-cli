@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { isAllowed } from '../utils/permissions.js';
 
 export interface ConfirmOpts {
@@ -10,6 +11,13 @@ export interface ConfirmOpts {
 let handler: ((action: string, opts?: ConfirmOpts) => Promise<boolean>) | null =
   null;
 
+const forceStorage = new AsyncLocalStorage<boolean>();
+
+/** Run `fn` with all confirm() calls auto-approved. Scoped to the async context — no global state to clean up. */
+export function withForceMode<T>(fn: () => T): T {
+  return forceStorage.run(true, fn);
+}
+
 // Queue to serialize concurrent confirm() calls so only one prompt
 // is visible at a time (the AI SDK fires tool executions in parallel).
 let queue: Promise<boolean> = Promise.resolve(true);
@@ -18,6 +26,8 @@ export async function confirm(
   action: string,
   opts?: ConfirmOpts,
 ): Promise<boolean> {
+  if (forceStorage.getStore()) return true;
+
   // Check persistent permissions first
   if (opts?.tool) {
     const cwd = process.cwd();
