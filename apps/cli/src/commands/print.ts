@@ -212,8 +212,10 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
       },
       onPending: (text) => {
         if (!text) {
-          output = '';
-          outputEndsWithNewline = false;
+          if (!json) {
+            output = '';
+            outputEndsWithNewline = false;
+          }
           return;
         }
         trackOutput(text);
