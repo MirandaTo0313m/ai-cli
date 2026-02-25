@@ -103,7 +103,7 @@ describe('eval: latest package versions', () => {
         `\n  latest zod: ${latestVersion} (major ${latestMajor}) | installed major: ${installedMajor}`,
       );
       console.log(
-        `  tokens: ${result.json.tokens} | cost: $${result.json.cost.toFixed(4)} | exit: ${result.json.exitCode}`,
+        `  tokens: ${result.json.tokens} | cost: $${result.json.cost.toFixed(4)} | steps: ${result.json.steps} | toolCalls: ${result.json.toolCalls} | exit: ${result.json.exitCode}`,
       );
     },
     TIMEOUT,

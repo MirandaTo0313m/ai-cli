@@ -78,6 +78,7 @@ export interface StreamCallbacks {
   onUsage: (usage: TokenUsage) => void;
   onSummary: (summary: string) => void;
   onBusy: (busy: boolean) => void;
+  onStepFinish?: () => void;
 }
 
 interface StreamOptions {
@@ -662,6 +663,7 @@ export async function streamChat(options: StreamOptions): Promise<Chat> {
           flushReasoning();
           const sf = part as { finishReason?: string };
           debug(`step-finish: ${sf.finishReason}`);
+          callbacks.onStepFinish?.();
           break;
         }
 

@@ -39,6 +39,8 @@ interface HeadlessResult {
   model: string;
   tokens: number;
   cost: number;
+  steps: number;
+  toolCalls: number;
   exitCode: number;
   chatId?: string;
   error?: string;
@@ -115,6 +117,8 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
           model,
           tokens: opts?.tokens ?? 0,
           cost: opts?.cost ?? 0,
+          steps: 0,
+          toolCalls: 0,
           exitCode: 1,
           error: msg,
           chatId: opts?.chatId,
@@ -159,6 +163,8 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
 
     let tokens = 0;
     let cost = 0;
+    let steps = 0;
+    let toolCalls = 0;
     let output = '';
     let outputEndsWithNewline = false;
     let stuck = false;
@@ -238,6 +244,7 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
         } else if (type === 'error') {
           if (verbose) process.stderr.write(`${content}\n`);
         } else if (type === 'tool') {
+          toolCalls++;
           if (verbose) process.stderr.write(`${content}\n`);
         }
       },
@@ -263,6 +270,9 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
       },
       onSummary: () => {},
       onBusy: () => {},
+      onStepFinish: () => {
+        steps++;
+      },
     };
 
     let chat: Chat | null = null;
@@ -348,6 +358,8 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
         model,
         tokens,
         cost,
+        steps,
+        toolCalls,
         exitCode: stuck ? 2 : 0,
         chatId: save && chat ? chat.id : undefined,
         usage: usage ?? undefined,
