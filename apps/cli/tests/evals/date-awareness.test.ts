@@ -75,7 +75,7 @@ describe('eval: date awareness', () => {
       console.log(`\n  expected: ${monthLong} ${day}, ${year}`);
       console.log(`  output: ${result.json.output.trim()}`);
       console.log(
-        `  tokens: ${result.json.tokens} | cost: $${result.json.cost.toFixed(4)} | exit: ${result.json.exitCode}`,
+        `  tokens: ${result.json.tokens} | cost: $${result.json.cost.toFixed(4)} | steps: ${result.json.steps} | toolCalls: ${result.json.toolCalls} | exit: ${result.json.exitCode}`,
       );
     },
     TIMEOUT,

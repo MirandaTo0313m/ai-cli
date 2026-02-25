@@ -87,7 +87,7 @@ describe('eval: CRUD REST API', () => {
       expect(result.json.exitCode).toBe(0);
 
       console.log(
-        `\n  tokens: ${result.json.tokens} | cost: $${result.json.cost.toFixed(4)} | exit: ${result.json.exitCode}`,
+        `\n  tokens: ${result.json.tokens} | cost: $${result.json.cost.toFixed(4)} | steps: ${result.json.steps} | toolCalls: ${result.json.toolCalls} | exit: ${result.json.exitCode}`,
       );
     },
     TIMEOUT,

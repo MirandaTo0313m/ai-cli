@@ -14,8 +14,8 @@
  */
 import { expect } from 'bun:test';
 import { execSync, spawn as nodeSpawn } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync, mkdtempSync, readFileSync, unlinkSync } from 'node:fs';
+import { homedir, tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 const CLI = resolve(import.meta.dirname, '../../dist/ai.mjs');
@@ -63,6 +63,8 @@ export interface HeadlessResult {
   model: string;
   tokens: number;
   cost: number;
+  steps: number;
+  toolCalls: number;
   exitCode: number;
   chatId?: string;
   error?: string;
@@ -92,6 +94,10 @@ export interface EvalOptions {
   model?: string;
   /** Run before the eval starts (receives the work dir) */
   setup?: (dir: string) => Promise<void>;
+  /** Resume an existing chat session by ID */
+  resume?: string;
+  /** Persist the chat session (needed for multi-turn). Default: false */
+  save?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -119,7 +125,13 @@ export async function runEval(
   prompt: string,
   opts: EvalOptions = {},
 ): Promise<EvalResult> {
-  const { timeoutSec = 300, model = EVAL_MODEL, setup } = opts;
+  const {
+    timeoutSec = 300,
+    model = EVAL_MODEL,
+    setup,
+    resume,
+    save = false,
+  } = opts;
 
   const workDir = opts.cwd ?? createWorkDir();
 
@@ -132,11 +144,12 @@ export async function runEval(
     '-p',
     '--force',
     '--json',
-    '--no-save',
+    ...(save ? [] : ['--no-save']),
     '--timeout',
     String(timeoutSec),
     '--model',
     model,
+    ...(resume ? ['--resume', resume] : []),
     prompt,
   ];
 
@@ -182,6 +195,8 @@ export async function runEval(
   console.log(`  json.exitCode: ${json.exitCode}`);
   console.log(`  json.error: ${json.error ?? '(none)'}`);
   console.log(`  json.tokens: ${json.tokens}`);
+  console.log(`  json.steps: ${json.steps}`);
+  console.log(`  json.toolCalls: ${json.toolCalls}`);
   console.log(`  json.output length: ${json.output.length}`);
   if (json.error) {
     console.log(`  json.output: ${json.output.slice(0, 500)}`);
@@ -285,4 +300,84 @@ export function assertAnyFileExists(
   if (!found) {
     throw new Error(`None of [${relativePaths.join(', ')}] exist in ${dir}`);
   }
+}
+
+export function assertStepCount(
+  result: EvalResult,
+  bounds: { min?: number; max?: number },
+): void {
+  const { steps } = result.json;
+  if (bounds.min !== undefined) {
+    expect(steps).toBeGreaterThanOrEqual(bounds.min);
+  }
+  if (bounds.max !== undefined) {
+    expect(steps).toBeLessThanOrEqual(bounds.max);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Multi-turn support
+// ---------------------------------------------------------------------------
+
+export interface MultiTurnMessage {
+  prompt: string;
+  /** Optional assertion to run between turns */
+  check?: (result: EvalResult, turnIndex: number) => void | Promise<void>;
+}
+
+export interface MultiTurnEvalResult {
+  turns: EvalResult[];
+  workDir: string;
+}
+
+export function cleanupChat(chatId: string): void {
+  try {
+    const chatPath = join(homedir(), '.ai-cli', 'chats', `${chatId}.json`);
+    unlinkSync(chatPath);
+  } catch {}
+}
+
+export async function runMultiTurnEval(
+  messages: MultiTurnMessage[],
+  opts: EvalOptions = {},
+): Promise<MultiTurnEvalResult> {
+  if (messages.length === 0) {
+    throw new Error('runMultiTurnEval requires at least one message');
+  }
+
+  const workDir = opts.cwd ?? createWorkDir();
+  const turns: EvalResult[] = [];
+  let chatId: string | undefined;
+
+  for (let i = 0; i < messages.length; i++) {
+    const msg = messages[i];
+    const turnLabel = `[turn ${i + 1}/${messages.length}]`;
+    console.log(`\n${turnLabel} sending: "${msg.prompt.slice(0, 80)}..."`);
+
+    const result = await runEval(msg.prompt, {
+      ...opts,
+      cwd: workDir,
+      save: true,
+      resume: chatId,
+      setup: i === 0 ? opts.setup : undefined,
+    });
+
+    turns.push(result);
+
+    if (!chatId && result.json.chatId) {
+      chatId = result.json.chatId;
+    }
+
+    if (!chatId && i < messages.length - 1) {
+      throw new Error(
+        `${turnLabel} no chatId returned — cannot resume for next turn`,
+      );
+    }
+
+    if (msg.check) {
+      await msg.check(result, i);
+    }
+  }
+
+  return { turns, workDir };
 }
