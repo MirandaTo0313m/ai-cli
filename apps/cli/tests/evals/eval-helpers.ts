@@ -54,6 +54,10 @@ function loadDotEnv(): Record<string, string> {
 
 const dotEnvVars = loadDotEnv();
 
+for (const [k, v] of Object.entries(dotEnvVars)) {
+  if (!process.env[k]) process.env[k] = v;
+}
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
