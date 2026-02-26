@@ -432,7 +432,7 @@ export async function streamChat(options: StreamOptions): Promise<Chat> {
         partType !== 'tool-error' &&
         partType !== 'tool-input-start' &&
         partType !== 'tool-input-delta' &&
-        partType !== 'step-finish'
+        partType !== 'finish-step'
       ) {
         continue;
       }
@@ -659,10 +659,10 @@ export async function streamChat(options: StreamOptions): Promise<Chat> {
           break;
         }
 
-        case 'step-finish': {
+        case 'finish-step': {
           flushReasoning();
           const sf = part as { finishReason?: string };
-          debug(`step-finish: ${sf.finishReason}`);
+          debug(`finish-step: ${sf.finishReason}`);
           callbacks.onStepFinish?.();
           break;
         }
