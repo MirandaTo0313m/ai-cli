@@ -1,6 +1,8 @@
 export const EVAL_MODELS = [
   'anthropic/claude-sonnet-4.6',
+  'anthropic/claude-opus-4.6',
   'xai/grok-4.1-fast-reasoning',
+  'xai/grok-code-fast-1',
 ] as const;
 
 export type EvalCategory =
@@ -39,6 +41,7 @@ export const EVAL_REGISTRY: EvalDefinition[] = [
       'Response contains the current year (2026)',
       'Agent completes without error',
     ],
+    judgeSpec: 'USE_PROMPT',
   },
   {
     slug: 'package-manager',
@@ -54,6 +57,7 @@ export const EVAL_REGISTRY: EvalDefinition[] = [
       'No wrong lockfiles created (package-lock.json, pnpm-lock.yaml, bun.lockb)',
       'lodash added to package.json dependencies',
     ],
+    judgeSpec: 'USE_PROMPT',
   },
   {
     slug: 'latest-versions',
@@ -68,6 +72,7 @@ export const EVAL_REGISTRY: EvalDefinition[] = [
       'A lockfile is created',
       'Agent completes without error',
     ],
+    judgeSpec: 'USE_PROMPT',
   },
   {
     slug: 'create-nextjs',
@@ -85,6 +90,7 @@ export const EVAL_REGISTRY: EvalDefinition[] = [
       'App Router structure (app/ directory with layout and page)',
       'Project builds successfully (next build exits 0)',
     ],
+    judgeSpec: 'USE_PROMPT',
   },
   {
     slug: 'clone-blog-confetti',
@@ -101,6 +107,7 @@ export const EVAL_REGISTRY: EvalDefinition[] = [
       'Source code modified to trigger confetti on page load',
       'No wrong lockfiles created',
     ],
+    judgeSpec: 'USE_PROMPT',
   },
   {
     slug: 'fix-known-bug',
@@ -116,6 +123,7 @@ export const EVAL_REGISTRY: EvalDefinition[] = [
       'All tests pass after the fix',
       'No unrelated changes introduced',
     ],
+    judgeSpec: 'USE_PROMPT',
   },
   {
     slug: 'cli-with-tests',
@@ -132,6 +140,7 @@ export const EVAL_REGISTRY: EvalDefinition[] = [
       'All tests pass',
       'package.json has a test script',
     ],
+    judgeSpec: 'USE_PROMPT',
   },
   {
     slug: 'react-component',
@@ -148,6 +157,7 @@ export const EVAL_REGISTRY: EvalDefinition[] = [
       'TypeScript and Vitest configured',
       'All tests pass',
     ],
+    judgeSpec: 'USE_PROMPT',
   },
   {
     slug: 'crud-api',
@@ -164,6 +174,7 @@ export const EVAL_REGISTRY: EvalDefinition[] = [
       'Test file covering all 4 endpoints',
       'All tests pass',
     ],
+    judgeSpec: 'USE_PROMPT',
   },
   {
     slug: 'refactor-safe',
@@ -179,6 +190,7 @@ export const EVAL_REGISTRY: EvalDefinition[] = [
       'Imports in index.ts and test files updated correctly',
       'All tests still pass after refactoring',
     ],
+    judgeSpec: 'USE_PROMPT',
   },
   {
     slug: 'build-then-fix',
@@ -198,6 +210,7 @@ export const EVAL_REGISTRY: EvalDefinition[] = [
       'Turn 2: New test for case-insensitive palindrome added',
       'Turn 2: All tests still pass',
     ],
+    judgeSpec: 'USE_PROMPT',
   },
   {
     slug: 'iterative-feature',
@@ -216,6 +229,7 @@ export const EVAL_REGISTRY: EvalDefinition[] = [
       'Turn 2: Reset button that clears count to zero',
       'Turn 2: Dark mode styles applied',
     ],
+    judgeSpec: 'USE_PROMPT',
   },
   {
     slug: 'progressive-enhancement',
@@ -235,6 +249,7 @@ export const EVAL_REGISTRY: EvalDefinition[] = [
       'Turn 2: POST validation — rejects empty/missing name with 400',
       'Turn 2: Validation test cases added and passing',
     ],
+    judgeSpec: 'USE_PROMPT',
   },
   {
     slug: 'component-library-prd',
