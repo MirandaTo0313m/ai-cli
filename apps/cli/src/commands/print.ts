@@ -1,14 +1,23 @@
 import type { ModelMessage } from 'ai';
 import { type Chat, saveChat } from '../config/chats.js';
-import { streamChat } from '../hooks/chat.js';
+import {
+  getReviewEnabled,
+  getReviewMaxIterations,
+} from '../config/settings.js';
 import type { StreamCallbacks, TokenUsage } from '../hooks/chat.js';
+import { streamChat } from '../hooks/chat.js';
 import { withForceMode } from '../tools/confirm.js';
 import { gray } from '../utils/color.js';
 import { formatError } from '../utils/errors.js';
 import { loadImage, type PendingImage } from '../utils/image.js';
 import { getModelCapabilities } from '../utils/models.js';
 import { detectPackageManager } from '../utils/package-manager.js';
+import { reviewLoop } from '../utils/review.js';
 import { createSpinner } from '../utils/spinner.js';
+import {
+  getChangedFilesWithOriginals,
+  hasChangedFiles,
+} from '../utils/undo.js';
 
 interface PrintOptions {
   message: string;
@@ -18,6 +27,7 @@ interface PrintOptions {
   force?: boolean;
   save?: boolean;
   quiet?: boolean;
+  verbose?: boolean;
   system?: string;
   plan?: boolean;
   resume?: string;
@@ -30,6 +40,8 @@ interface HeadlessResult {
   model: string;
   tokens: number;
   cost: number;
+  steps: number;
+  toolCalls: number;
   exitCode: number;
   chatId?: string;
   error?: string;
@@ -80,6 +92,7 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
     json = false,
     save = true,
     quiet = false,
+    verbose: explicitVerbose,
     system,
     plan = false,
     resume,
@@ -87,7 +100,7 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
     version,
   } = options;
 
-  const verbose = !json && !quiet;
+  const verbose = explicitVerbose ?? (!json && !quiet);
   let exitCode = 0;
 
   try {
@@ -106,6 +119,8 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
           model,
           tokens: opts?.tokens ?? 0,
           cost: opts?.cost ?? 0,
+          steps: 0,
+          toolCalls: 0,
           exitCode: 1,
           error: msg,
           chatId: opts?.chatId,
@@ -146,10 +161,13 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
 
     const pm = detectPackageManager();
     const capabilities = await getModelCapabilities(model);
-    const spinner = verbose ? createSpinner(process.stderr) : null;
+    const useSpinner = verbose && !json;
+    const spinner = useSpinner ? createSpinner(process.stderr) : null;
 
     let tokens = 0;
     let cost = 0;
+    let steps = 0;
+    let toolCalls = 0;
     let output = '';
     let outputEndsWithNewline = false;
     let stuck = false;
@@ -205,15 +223,22 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
       }
     };
 
+    const logLine = (msg: string) => {
+      if (verbose) process.stderr.write(`${msg}\n`);
+    };
+
     const callbacks: StreamCallbacks = {
       onStatus: (status) => {
-        if (verbose && status) spinner?.update(status);
-        if (verbose && !status) spinner?.stop();
+        if (spinner && status) spinner.update(status);
+        if (spinner && !status) spinner.stop();
+        if (!spinner && verbose && status) logLine(`[status] ${status}`);
       },
       onPending: (text) => {
         if (!text) {
-          output = '';
-          outputEndsWithNewline = false;
+          if (!json) {
+            output = '';
+            outputEndsWithNewline = false;
+          }
           return;
         }
         trackOutput(text);
@@ -223,11 +248,12 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
           trackOutput(content);
         } else if (type === 'info' && content.startsWith('Stopped:')) {
           stuck = true;
-          if (verbose) process.stderr.write(`${content}\n`);
+          logLine(content);
         } else if (type === 'error') {
-          if (verbose) process.stderr.write(`${content}\n`);
+          logLine(content);
         } else if (type === 'tool') {
-          if (verbose) process.stderr.write(`${content}\n`);
+          toolCalls++;
+          logLine(content);
         }
       },
       onRecord: (type, content) => {
@@ -235,10 +261,10 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
           trackOutput(content);
         }
       },
-      onReasoning: (text, _durationMs) => {
-        if (verbose) {
-          const short = text.replace(/\s+/g, ' ').trim().slice(-80);
-          spinner?.update(short);
+      onReasoning: (_text, _durationMs) => {
+        if (spinner) {
+          const short = _text.replace(/\s+/g, ' ').trim().slice(-80);
+          spinner.update(short);
         }
       },
       onTokens: (fn) => {
@@ -252,12 +278,17 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
       },
       onSummary: () => {},
       onBusy: () => {},
+      onStepFinish: () => {
+        steps++;
+      },
     };
 
     let chat: Chat | null = null;
 
     try {
-      spinner?.start('thinking...');
+      if (verbose) logLine('[phase] coding agent');
+      if (spinner) spinner.start('thinking...');
+      else if (verbose) logLine('[status] thinking...');
 
       chat = await streamChat({
         model,
@@ -277,6 +308,37 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
       });
 
       spinner?.stop();
+
+      if (hasChangedFiles() && getReviewEnabled()) {
+        const changed = getChangedFilesWithOriginals();
+        if (changed.length > 0) {
+          if (verbose) logLine('[phase] review agent');
+          spinner?.start('reviewing...');
+          try {
+            await reviewLoop({
+              model,
+              originalTask: message,
+              changedFiles: changed,
+              maxIterations: getReviewMaxIterations(),
+              callbacks,
+              abortSignal,
+              pm,
+              onPhase: verbose
+                ? (label) => logLine(`[phase] ${label}`)
+                : undefined,
+            });
+          } catch (e) {
+            if ((e as Error).name !== 'AbortError') {
+              if (verbose) {
+                process.stderr.write(`review error: ${formatError(e)}\n`);
+              }
+            }
+          }
+          spinner?.stop();
+        }
+      }
+
+      if (verbose) logLine('[phase] done');
 
       if (!json && output) {
         process.stdout.write('\n');
@@ -312,6 +374,8 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
         model,
         tokens,
         cost,
+        steps,
+        toolCalls,
         exitCode: stuck ? 2 : 0,
         chatId: save && chat ? chat.id : undefined,
         usage: usage ?? undefined,
