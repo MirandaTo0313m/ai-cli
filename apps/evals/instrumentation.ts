@@ -1,9 +1,9 @@
 export async function register() {
   const p = globalThis.process;
 
-  const fs = (() => {
+  const fs = await (async () => {
     try {
-      return require('fs');
+      return await import('fs');
     } catch {
       return null;
     }
@@ -23,7 +23,7 @@ export async function register() {
 
   if (!p?.env || p.env.NEXT_RUNTIME !== 'nodejs') return;
 
-  const { eq } = require('drizzle-orm');
+  const { eq } = await import('drizzle-orm');
   const { db } = await import('@/lib/db');
   const { evalRuns, evalTasks } = await import('@/lib/db/schema');
 

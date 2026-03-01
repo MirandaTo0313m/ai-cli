@@ -69,19 +69,6 @@ function taskStatusLabel(status: string) {
   }
 }
 
-function taskStatusColor(status: string) {
-  switch (status) {
-    case 'completed':
-      return 'text-green-500';
-    case 'failed':
-      return 'text-red-500';
-    case 'running':
-      return 'text-yellow-500';
-    default:
-      return 'text-muted-foreground';
-  }
-}
-
 function formatDuration(ms: number | null): string {
   if (ms == null) return '—';
   if (ms < 60_000) return `${(ms / 1000).toFixed(1)}s`;

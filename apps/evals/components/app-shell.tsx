@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { ChevronRight, ChevronDown, Trash2, RotateCw } from 'lucide-react';
 import {
@@ -34,13 +34,6 @@ function formatDuration(ms: number | null): string {
   if (ms == null) return '—';
   if (ms < 60_000) return `${(ms / 1000).toFixed(0)}s`;
   return `${(ms / 60_000).toFixed(1)}m`;
-}
-
-function runDuration(run: RunSummary, now: number): number | null {
-  const start = new Date(run.createdAt).getTime();
-  if (run.completedAt) return new Date(run.completedAt).getTime() - start;
-  if (run.status === 'running' || run.status === 'pending') return now - start;
-  return null;
 }
 
 function taskDuration(task: Task, now: number): number | null {
@@ -98,8 +91,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [runs, setRuns] = useState<RunSummary[]>([]);
   const [runDataMap, setRunDataMap] = useState<Record<string, RunData>>({});
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
-  const lastAutoExpandedRunId = useRef<string | null>(null);
-  const [now, setNow] = useState(Date.now());
+  const [lastAutoExpandedRunId, setLastAutoExpandedRunId] = useState<
+    string | null
+  >(null);
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     const hasActive = runs.some(
@@ -142,21 +137,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     };
   }, [selectedRunId]);
 
-  useEffect(() => {
-    if (!selectedRunId) return;
+  if (
+    selectedRunId &&
+    selectedRunId !== lastAutoExpandedRunId &&
+    runDataMap[selectedRunId]
+  ) {
     const runData = runDataMap[selectedRunId];
-    if (!runData || lastAutoExpandedRunId.current === selectedRunId) return;
-    lastAutoExpandedRunId.current = selectedRunId;
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      next.add(`run-${selectedRunId}`);
-      if (selectedTaskId) {
-        const task = runData.tasks.find((t) => t.id === selectedTaskId);
-        if (task) next.add(`model-${selectedRunId}-${task.model}`);
-      }
-      return next;
-    });
-  }, [selectedRunId, selectedTaskId, runDataMap]);
+    setLastAutoExpandedRunId(selectedRunId);
+    const next = new Set(expanded);
+    next.add(`run-${selectedRunId}`);
+    if (selectedTaskId) {
+      const task = runData.tasks.find((t) => t.id === selectedTaskId);
+      if (task) next.add(`model-${selectedRunId}-${task.model}`);
+    }
+    setExpanded(next);
+  }
 
   const fetchRunData = useCallback(async (id: string) => {
     const res = await fetch(`/api/runs/${id}`);
