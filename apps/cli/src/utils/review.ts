@@ -3,6 +3,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { type ModelMessage, streamText } from 'ai';
 import { SKILLS_DIR } from '../config/paths.js';
+import type { StreamCallbacks } from '../hooks/chat.js';
 import { editFile } from '../tools/edit-file.js';
 import { fetchUrl } from '../tools/fetch.js';
 import { killProcess } from '../tools/kill-process.js';
@@ -12,7 +13,6 @@ import { runCommand } from '../tools/run-command.js';
 import { searchInFiles } from '../tools/search-in-files.js';
 import { startProcess } from '../tools/start-process.js';
 import { writeFile } from '../tools/write-file.js';
-import type { StreamCallbacks } from '../hooks/chat.js';
 import { AI_CLI_HEADERS } from './constants.js';
 import { log as debug } from './debug.js';
 import { extractJsonStringValue } from './json-parse.js';
@@ -138,6 +138,7 @@ export interface ReviewOptions {
   callbacks: StreamCallbacks;
   abortSignal?: AbortSignal;
   pm: { pm: string; run: string };
+  onPhase?: (label: string) => void;
 }
 
 export interface ReviewResult {
@@ -165,6 +166,7 @@ export async function reviewLoop(
     callbacks,
     abortSignal,
     pm,
+    onPhase,
   } = options;
 
   const result: ReviewResult = {
@@ -211,6 +213,7 @@ export async function reviewLoop(
 
     result.iterations = i + 1;
     debug(`review: iteration ${i + 1}/${maxIterations}`);
+    onPhase?.(`review pass ${i + 1}/${maxIterations}`);
 
     const freshContent = changedFileRefs.map((f) => {
       let current = '';
@@ -281,7 +284,7 @@ export async function reviewLoop(
           partType !== 'tool-error' &&
           partType !== 'tool-input-start' &&
           partType !== 'tool-input-delta' &&
-          partType !== 'step-finish'
+          partType !== 'finish-step'
         ) {
           continue;
         }
@@ -506,10 +509,10 @@ export async function reviewLoop(
             break;
           }
 
-          case 'step-finish': {
+          case 'finish-step': {
             flushReasoning();
             const sf = part as { finishReason?: string };
-            debug(`review step-finish: ${sf.finishReason}`);
+            debug(`review finish-step: ${sf.finishReason}`);
             break;
           }
         }
@@ -544,11 +547,13 @@ export async function reviewLoop(
 
     if (buffer.includes(REVIEW_COMPLETE_MARKER)) {
       debug(`review: complete after ${i + 1} iteration(s)`);
+      onPhase?.('review complete');
       break;
     }
 
     if (!madeEdits) {
       debug('review: no edits made, stopping');
+      onPhase?.('review complete');
       break;
     }
   }
