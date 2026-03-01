@@ -35,6 +35,12 @@ interface PrintOptions {
   version: string;
 }
 
+type ChatMessage =
+  | { role: 'assistant'; content: string }
+  | { role: 'tool'; content: string }
+  | { role: 'reasoning'; content: string }
+  | { role: 'error'; content: string };
+
 interface HeadlessResult {
   output: string;
   model: string;
@@ -46,6 +52,7 @@ interface HeadlessResult {
   chatId?: string;
   error?: string;
   usage?: TokenUsage;
+  messages?: ChatMessage[];
 }
 
 class ExitError extends Error {
@@ -172,6 +179,7 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
     let outputEndsWithNewline = false;
     let stuck = false;
     let usage: TokenUsage | null = null;
+    const messages: ChatMessage[] = [];
 
     const history: ModelMessage[] = [];
     let existingChat: Chat | null = null;
@@ -246,26 +254,33 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
       onMessage: (type, content) => {
         if (type === 'assistant') {
           trackOutput(content);
+          if (json) messages.push({ role: 'assistant', content });
         } else if (type === 'info' && content.startsWith('Stopped:')) {
           stuck = true;
           logLine(content);
         } else if (type === 'error') {
           logLine(content);
+          if (json) messages.push({ role: 'error', content });
         } else if (type === 'tool') {
           toolCalls++;
           logLine(content);
+          if (json) messages.push({ role: 'tool', content });
         }
       },
       onRecord: (type, content) => {
         if (type === 'assistant') {
           trackOutput(content);
+          if (json) messages.push({ role: 'assistant', content });
         }
       },
       onReasoning: (_text, _durationMs) => {
         if (spinner) {
           const short = _text.replace(/\s+/g, ' ').trim().slice(-80);
           spinner.update(short);
+        } else if (verbose) {
+          logLine(`[reasoning] ${_text}`);
         }
+        if (json) messages.push({ role: 'reasoning', content: _text });
       },
       onTokens: (fn) => {
         tokens = fn(tokens);
@@ -288,7 +303,6 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
     try {
       if (verbose) logLine('[phase] coding agent');
       if (spinner) spinner.start('thinking...');
-      else if (verbose) logLine('[status] thinking...');
 
       chat = await streamChat({
         model,
@@ -379,6 +393,7 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
         exitCode: stuck ? 2 : 0,
         chatId: save && chat ? chat.id : undefined,
         usage: usage ?? undefined,
+        messages,
       };
       process.stdout.write(`${JSON.stringify(result)}\n`);
     }

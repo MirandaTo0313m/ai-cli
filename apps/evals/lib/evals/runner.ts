@@ -4,9 +4,10 @@ import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
-import { evalRuns, evalTasks } from '@/lib/db/schema';
+import { evalRuns, evalTasks, evalComparisons } from '@/lib/db/schema';
 import type { EvalDefinition } from './registry';
-import { judgeSpecAdherence } from './judge';
+import { getEvalBySlug } from './registry';
+import { judgeSpecAdherence, judgeComparison } from './judge';
 
 const CLI_PATH = resolve(process.cwd(), '../cli/dist/ai.mjs');
 
@@ -21,6 +22,7 @@ interface TaskResult {
   error?: string;
   logs: string;
   workDir: string;
+  messages?: { role: string; content: string }[];
 }
 
 function createTempDir(): string {
@@ -201,7 +203,10 @@ export async function executeRun(
         await flushLogs(logs);
 
         try {
-          const judgeResult = await judgeSpecAdherence(judgeSpecText, workDir);
+          const judgeResult = await judgeSpecAdherence(judgeSpecText, workDir, {
+            agentOutput: result.output || undefined,
+            agentLogs: logs || undefined,
+          });
           judgeScore = judgeResult.adherenceScore;
           judgeVerdict = judgeResult.verdict;
 
@@ -248,6 +253,7 @@ export async function executeRun(
           logs: logs.slice(-50000),
           judgeScore,
           judgeVerdict,
+          messages: result.messages ? JSON.stringify(result.messages) : null,
           completedAt,
         })
         .where(eq(evalTasks.id, taskId));
@@ -274,6 +280,50 @@ export async function executeRun(
       .select()
       .from(evalTasks)
       .where(eq(evalTasks.runId, runId));
+
+    // --- Comparative judge phase ---
+    if (models.length >= 2) {
+      const evalGroups = new Map<string, typeof allTasks>();
+      for (const task of allTasks) {
+        const list = evalGroups.get(task.evalName);
+        if (list) list.push(task);
+        else evalGroups.set(task.evalName, [task]);
+      }
+
+      for (const [evalName, tasks] of evalGroups) {
+        const completedTasks = tasks.filter(
+          (t) => t.status === 'completed' || t.status === 'failed',
+        );
+        if (completedTasks.length < 2) continue;
+
+        const evalDef = getEvalBySlug(evalName);
+        const spec = evalDef?.prompt ?? evalName;
+
+        try {
+          const entries = completedTasks.map((t) => ({
+            model: t.model,
+            output: t.output,
+            judgeScore: t.judgeScore,
+            judgeVerdict: t.judgeVerdict,
+          }));
+
+          const comparison = await judgeComparison(spec, entries);
+
+          await db.insert(evalComparisons).values({
+            runId,
+            evalName,
+            winnerModel: comparison.winnerModel,
+            rankings: JSON.stringify(comparison.rankings),
+            reasoning: comparison.reasoning,
+          });
+        } catch (err) {
+          console.error(
+            `Comparison judge failed for ${evalName}:`,
+            err instanceof Error ? err.message : err,
+          );
+        }
+      }
+    }
 
     const hasFailed = allTasks.some((t) => t.status === 'failed');
 
