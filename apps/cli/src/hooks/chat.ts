@@ -168,7 +168,7 @@ function addHistoryCacheBreakpoint(
 		return;
 	}
 	const last = history.at(-1);
-	if (last.role === "user" || last.role === "assistant") {
+	if (last && (last.role === "user" || last.role === "assistant")) {
 		(last as { providerOptions?: Record<string, unknown> }).providerOptions = {
 			...last.providerOptions,
 			...ANTHROPIC_CACHE_CONTROL,
@@ -185,6 +185,7 @@ function removeHistoryCacheBreakpoint(
 	}
 	const last = history.at(-1);
 	if (
+		last &&
 		last.providerOptions &&
 		"anthropic" in last.providerOptions &&
 		(last.providerOptions as Record<string, unknown>).anthropic ===

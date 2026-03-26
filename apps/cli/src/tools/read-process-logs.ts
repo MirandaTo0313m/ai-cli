@@ -26,7 +26,11 @@ export const readProcessLogs = tool({
 			if (procs.length === 0) {
 				return { error: "No background processes running" };
 			}
-			targetPid = procs.at(-1).pid;
+			const lastProc = procs.at(-1);
+			if (!lastProc) {
+				return { error: "No background processes available" };
+			}
+			targetPid = lastProc.pid;
 		}
 
 		// Wait up to 5 seconds for output to appear instead of returning empty immediately

@@ -64,6 +64,9 @@ export const processes: CommandHandler = (_ctx, args) => {
 				target = found;
 			}
 		}
+		if (!target) {
+			return { output: "no processes found" };
+		}
 		const logs = getProcessLogs(target.pid, 20);
 		if (logs.length === 0) {
 			return { output: `no output from process ${target.pid}` };
