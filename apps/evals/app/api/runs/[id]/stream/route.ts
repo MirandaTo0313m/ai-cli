@@ -1,10 +1,11 @@
-import { eq } from 'drizzle-orm';
-import { db } from '@/lib/db';
-import { evalRuns, evalTasks } from '@/lib/db/schema';
+import { eq } from "drizzle-orm";
+
+import { db } from "@/lib/db";
+import { evalRuns, evalTasks } from "@/lib/db/schema";
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
 
@@ -26,7 +27,7 @@ export async function GET(
           .limit(1);
 
         if (run.length === 0) {
-          send({ error: 'Run not found' });
+          send({ error: "Run not found" });
           controller.close();
           return;
         }
@@ -38,7 +39,7 @@ export async function GET(
 
         send({ ...run[0], tasks });
 
-        isTerminal = ['completed', 'failed'].includes(run[0].status);
+        isTerminal = ["completed", "failed"].includes(run[0].status);
 
         if (!isTerminal) {
           await new Promise((r) => setTimeout(r, 2000));
@@ -51,9 +52,9 @@ export async function GET(
 
   return new Response(stream, {
     headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
     },
   });
 }

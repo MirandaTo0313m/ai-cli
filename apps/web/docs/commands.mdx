@@ -1,0 +1,59 @@
+---
+title: Slash Commands
+description: Built-in commands for managing sessions and context.
+order: 9
+---
+
+Type `/` in interactive mode to see all available commands.
+
+## Chat management
+
+| Command | Description |
+| --- | --- |
+| `/chat` | List or switch chats |
+| `/clear` | Clear the screen |
+
+## Context
+
+| Command | Description |
+| --- | --- |
+| `/usage` | Show token usage and cost |
+| `/compress` | Compress chat to save tokens |
+| `/summary` | Summarize the conversation |
+| `/plan` | Toggle read-only plan mode |
+| `/review` | Toggle automatic code review |
+
+## Model
+
+| Command | Description |
+| --- | --- |
+| `/model` | Show current model |
+| `/model <query>` | Switch model with fuzzy match |
+
+## Files
+
+| Command | Description |
+| --- | --- |
+| `/copy` | Copy last response to clipboard |
+| `/rollback` | Undo AI file changes |
+
+## System
+
+| Command | Description |
+| --- | --- |
+| `/info` | Show session info |
+| `/processes` | List running processes |
+| `/memory` | View saved memories |
+| `/mcp` | List MCP servers |
+| `/settings` | Open settings |
+| `/permissions` | Manage tool permissions |
+| `/alias` | Create command aliases |
+| `/rules` | View active rules |
+| `/skills` | List installed skills |
+| `/init` | Re-run API key setup |
+| `/help` | Show help |
+| `/version` | Show version |
+
+<Callout type="tip">
+  Commands support fuzzy matching too. Type `/mod` to quickly access `/model`, or `/comp` for `/compress`.
+</Callout>

@@ -1,5 +1,3 @@
-import type { CommandHandler } from './types.js';
+import type { CommandHandler } from "./types.js";
 
-export const plan: CommandHandler = () => {
-  return { planMode: true };
-};
+export const plan: CommandHandler = () => ({ planMode: true });

@@ -1,0 +1,50 @@
+---
+title: MCP Servers
+description: Connect external tools via Model Context Protocol.
+order: 14
+---
+
+## What is MCP?
+
+Model Context Protocol (MCP) allows the AI to connect to external tool servers. This extends the tool set beyond the [22 built-in tools](/docs/tools).
+
+## Configuration
+
+MCP servers are defined in your config directory:
+
+```json
+{
+  "servers": [
+    {
+      "name": "my-tools",
+      "transport": "stdio",
+      "command": "node",
+      "args": ["./my-mcp-server.js"]
+    }
+  ]
+}
+```
+
+## Transport types
+
+<Properties>
+  <Property name="stdio" type="transport">
+    Local process communication. The server runs as a child process.
+  </Property>
+  <Property name="sse" type="transport">
+    Server-sent events over HTTP. For remote servers with streaming.
+  </Property>
+  <Property name="http" type="transport">
+    HTTP request/response. Simple remote server integration.
+  </Property>
+</Properties>
+
+## Viewing connected servers
+
+```bash
+/mcp
+```
+
+<Callout type="tip">
+  MCP servers let you connect ai-cli to databases, APIs, deployment tools, and any other external service. The AI discovers available tools from connected servers automatically.
+</Callout>

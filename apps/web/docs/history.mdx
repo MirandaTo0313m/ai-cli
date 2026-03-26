@@ -1,0 +1,55 @@
+---
+title: Chat History
+description: Every conversation is saved and resumable.
+order: 12
+---
+
+## Automatic saving
+
+All conversations are automatically saved to `~/.ai-cli/chats/` as timestamped JSON files. No setup needed.
+
+## Listing chats
+
+```bash
+/chats
+```
+
+## Resuming a session
+
+In interactive mode, resume by index:
+
+```bash
+/chat 3
+```
+
+In headless mode, resume by ID:
+
+```bash
+ai -p -r <chatId> "continue where we left off"
+```
+
+## Compression
+
+When a conversation gets long and approaches the model's context limit:
+
+```bash
+/compress
+```
+
+<Callout type="tip">
+  Compression summarizes the conversation to save tokens while preserving important context. Use it proactively on long sessions to avoid hitting limits.
+</Callout>
+
+## Deleting chats
+
+```bash
+/delete
+```
+
+## Ephemeral mode
+
+Run without saving history:
+
+```bash
+ai -p --no-save "quick question"
+```

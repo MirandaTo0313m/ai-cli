@@ -1,0 +1,57 @@
+---
+title: Single Message
+description: Quick one-off queries from the terminal.
+order: 5
+---
+
+## Usage
+
+Pass a message as an argument:
+
+```bash
+ai "what does this regex do: /^[a-z]+$/i"
+```
+
+The AI responds with streaming output and exits when done.
+
+## Options
+
+<Properties>
+  <Property name="-m" type="string">
+    Use a specific model for this query.
+  </Property>
+  <Property name="--image" type="path">
+    Attach an image file for visual analysis.
+  </Property>
+  <Property name="--system" type="string">
+    Custom system prompt for this query.
+  </Property>
+</Properties>
+
+```bash
+ai -m gpt-5 "hello"
+ai --image ./screenshot.png "what's this?"
+ai --system "respond in Spanish" "hello"
+```
+
+## Pipe input
+
+Stream content into the AI via stdin:
+
+```bash
+cat src/auth.ts | ai "review this for security issues"
+git diff | ai "summarize these changes"
+echo "explain kubernetes" | ai
+```
+
+<Callout type="tip">
+  Piping is powerful for integrating ai-cli into existing shell workflows. Combine it with any command that produces text output.
+</Callout>
+
+## Combining flags
+
+Flags compose naturally:
+
+```bash
+git log --oneline -20 | ai -m gpt-5 "what was the focus this week?"
+```

@@ -1,16 +1,11 @@
-'use client';
+"use client";
 
-import { useState, useCallback } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Terminal, Plus, MoreVertical, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Terminal, Plus, MoreVertical, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState, useCallback } from "react";
+
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -18,16 +13,22 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function AppHeader() {
   const router = useRouter();
   const [showDeleteAll, setShowDeleteAll] = useState(false);
 
   const handleDeleteAll = useCallback(async () => {
-    await fetch('/api/runs', { method: 'DELETE' });
+    await fetch("/api/runs", { method: "DELETE" });
     setShowDeleteAll(false);
-    router.push('/');
+    router.push("/");
     router.refresh();
   }, [router]);
 

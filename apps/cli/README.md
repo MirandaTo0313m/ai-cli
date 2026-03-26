@@ -95,6 +95,7 @@ On error, includes an `error` field with the message.
 ## Commands
 
 ### Chat
+
 - `/new` - new chat
 - `/chats` - list chats
 - `/chat <n>` - load chat
@@ -102,20 +103,24 @@ On error, includes an `error` field with the message.
 - `/clear` - clear screen
 
 ### Files
+
 - `/copy` - copy response
 - `/rollback` - undo changes
 
 ### Context
+
 - `/usage` - token usage and cost
 - `/compress` - compress history
 - `/plan` - toggle plan mode (think before acting)
 - `/review` - review loop (auto-reviews changes for bugs)
 
 ### Model
+
 - `/model` - select model interactively
 - `/model <query>` - switch to matching model
 
 ### System
+
 - `/info` - version, model, balance, storage
 - `/processes` - background processes
 - `/memory` - saved memories

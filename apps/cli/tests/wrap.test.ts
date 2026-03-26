@@ -1,59 +1,60 @@
-import { describe, expect, test } from 'bun:test';
-import { createStreamWrap, wrap } from '../src/utils/wrap.js';
+import { describe, expect, test } from "bun:test";
 
-describe('wrap', () => {
-  test('returns short text unchanged', () => {
-    expect(wrap('hello', 80)).toBe('hello');
-  });
+import { createStreamWrap, wrap } from "../src/utils/wrap.js";
 
-  test('wraps long lines at word boundaries', () => {
-    const text = 'one two three four five';
-    expect(wrap(text, 10)).toBe('one two\nthree\nfour five');
-  });
+describe("wrap", () => {
+	test("returns short text unchanged", () => {
+		expect(wrap("hello", 80)).toBe("hello");
+	});
 
-  test('preserves existing newlines', () => {
-    expect(wrap('line1\nline2', 80)).toBe('line1\nline2');
-  });
+	test("wraps long lines at word boundaries", () => {
+		const text = "one two three four five";
+		expect(wrap(text, 10)).toBe("one two\nthree\nfour five");
+	});
 
-  test('handles single long word', () => {
-    expect(wrap('superlongword', 5)).toBe('superlongword');
-  });
+	test("preserves existing newlines", () => {
+		expect(wrap("line1\nline2", 80)).toBe("line1\nline2");
+	});
 
-  test('handles empty string', () => {
-    expect(wrap('', 80)).toBe('');
-  });
+	test("handles single long word", () => {
+		expect(wrap("superlongword", 5)).toBe("superlongword");
+	});
 
-  test('handles multiple spaces', () => {
-    const text = 'hello world';
-    const result = wrap(text, 80);
-    expect(result).toContain('hello');
-    expect(result).toContain('world');
-  });
+	test("handles empty string", () => {
+		expect(wrap("", 80)).toBe("");
+	});
+
+	test("handles multiple spaces", () => {
+		const text = "hello world";
+		const result = wrap(text, 80);
+		expect(result).toContain("hello");
+		expect(result).toContain("world");
+	});
 });
 
-describe('createStreamWrap', () => {
-  test('buffers text until space', () => {
-    const sw = createStreamWrap();
-    expect(sw.write('hello')).toBe('');
-    expect(sw.write(' ')).toBe('hello ');
-  });
+describe("createStreamWrap", () => {
+	test("buffers text until space", () => {
+		const sw = createStreamWrap();
+		expect(sw.write("hello")).toBe("");
+		expect(sw.write(" ")).toBe("hello ");
+	});
 
-  test('flushes remaining buffer', () => {
-    const sw = createStreamWrap();
-    sw.write('hello');
-    expect(sw.flush()).toBe('hello');
-  });
+	test("flushes remaining buffer", () => {
+		const sw = createStreamWrap();
+		sw.write("hello");
+		expect(sw.flush()).toBe("hello");
+	});
 
-  test('handles newlines', () => {
-    const sw = createStreamWrap();
-    sw.write('hello');
-    expect(sw.write('\n')).toBe('hello\n');
-  });
+	test("handles newlines", () => {
+		const sw = createStreamWrap();
+		sw.write("hello");
+		expect(sw.write("\n")).toBe("hello\n");
+	});
 
-  test('reset clears buffer', () => {
-    const sw = createStreamWrap();
-    sw.write('hello');
-    sw.reset();
-    expect(sw.flush()).toBe('');
-  });
+	test("reset clears buffer", () => {
+		const sw = createStreamWrap();
+		sw.write("hello");
+		sw.reset();
+		expect(sw.flush()).toBe("");
+	});
 });

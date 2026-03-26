@@ -1,14 +1,15 @@
-import { describe, expect, test } from 'bun:test';
-import { AI_CLI_HEADERS } from '../src/utils/constants.js';
+import { describe, expect, test } from "bun:test";
 
-describe('AI_CLI_HEADERS', () => {
-  test('contains HTTP-Referer', () => {
-    expect(AI_CLI_HEADERS['HTTP-Referer']).toBe(
-      'https://www.npmjs.com/package/ai-cli',
-    );
-  });
+import { AI_CLI_HEADERS } from "../src/utils/constants.js";
 
-  test('contains X-Title', () => {
-    expect(AI_CLI_HEADERS['X-Title']).toBe('ai-cli');
-  });
+describe("AI_CLI_HEADERS", () => {
+	test("contains HTTP-Referer", () => {
+		expect(AI_CLI_HEADERS["HTTP-Referer"]).toBe(
+			"https://www.npmjs.com/package/ai-cli",
+		);
+	});
+
+	test("contains X-Title", () => {
+		expect(AI_CLI_HEADERS["X-Title"]).toBe("ai-cli");
+	});
 });

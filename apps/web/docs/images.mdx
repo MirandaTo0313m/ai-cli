@@ -1,0 +1,31 @@
+---
+title: Images
+description: Analyze images from clipboard or file.
+order: 11
+---
+
+## From file
+
+```bash
+ai --image ./screenshot.png "what's in this image?"
+```
+
+Supports PNG, JPG, GIF, and WebP formats.
+
+## From clipboard
+
+In interactive mode, press <Kbd>Ctrl+V</Kbd> to paste an image from your clipboard. The AI will see it as part of your next message.
+
+## Use cases
+
+<Cards>
+  <Card title="UI screenshots" description="Analyze interfaces, find layout issues, suggest improvements." />
+  <Card title="Diagrams" description="Read flowcharts, architecture diagrams, and wireframes." />
+  <Card title="Visual debugging" description="Show the AI a bug screenshot and ask for a fix." />
+  <Card title="Text extraction" description="OCR text from images, screenshots, and photos." />
+  <Card title="Design comparison" description="Compare mockups to implementation side by side." />
+</Cards>
+
+<Callout type="info">
+  Image analysis requires a vision-capable model. Claude and GPT-4 support images natively. Some smaller models may not support vision.
+</Callout>

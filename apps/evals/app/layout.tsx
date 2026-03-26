@@ -1,23 +1,25 @@
-import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
-import { TooltipProvider } from '@/components/ui/tooltip';
-import { AppHeader } from '@/components/app-header';
-import { AppShell } from '@/components/app-shell';
-import './globals.css';
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+
+import { AppHeader } from "@/components/app-header";
+import { AppShell } from "@/components/app-shell";
+import { TooltipProvider } from "@/components/ui/tooltip";
+
+import "./globals.css";
 
 const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
 });
 
 const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: 'AI CLI Evals',
-  description: 'Run and monitor eval suites for ai-cli',
+  title: "AI CLI Evals",
+  description: "Run and monitor eval suites for ai-cli",
 };
 
 export default function RootLayout({
