@@ -1,15 +1,17 @@
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { tool } from 'ai';
-import { z } from 'zod';
-import { resolveAnyPath, safePath } from '../utils/safe-path.js';
-import { saveDelete } from '../utils/undo.js';
-import { confirm } from './confirm.js';
+import * as fs from "node:fs";
+import * as path from "node:path";
+
+import { tool } from "ai";
+import { z } from "zod";
+
+import { resolveAnyPath, safePath } from "../utils/safe-path.js";
+import { saveDelete } from "../utils/undo.js";
+import { confirm } from "./confirm.js";
 
 export const deleteFile = tool({
-  description: 'Delete one or more files or folders.',
+  description: "Delete one or more files or folders.",
   inputSchema: z.object({
-    paths: z.array(z.string()).describe('Array of paths to delete'),
+    paths: z.array(z.string()).describe("Array of paths to delete"),
   }),
   execute: async ({ paths }) => {
     const deleted: string[] = [];
@@ -22,10 +24,10 @@ export const deleteFile = tool({
       if (!fullPath) {
         const allowed = await confirm(
           `delete path outside project: ${filePath}`,
-          { tool: 'deleteFile', noAlways: true },
+          { tool: "deleteFile", noAlways: true }
         );
         if (!allowed) {
-          errors.push('User denied access to path outside project.');
+          errors.push("User denied access to path outside project.");
           continue;
         }
         fullPath = resolveAnyPath(filePath);
@@ -38,7 +40,7 @@ export const deleteFile = tool({
     }
 
     if (validPaths.length === 0) {
-      return { error: errors.join(', ') };
+      return { error: errors.join(", ") };
     }
 
     const names = validPaths
@@ -46,10 +48,10 @@ export const deleteFile = tool({
         const name = path.basename(p.filePath);
         return fs.statSync(p.fullPath).isDirectory() ? `${name}/` : name;
       })
-      .join(', ');
-    const ok = await confirm(`Delete ${names}?`, { tool: 'deleteFile' });
+      .join(", ");
+    const ok = await confirm(`Delete ${names}?`, { tool: "deleteFile" });
     if (!ok) {
-      return { error: 'User denied this action. Do not retry.' };
+      return { error: "User denied this action. Do not retry." };
     }
 
     for (const { filePath, fullPath } of validPaths) {
@@ -72,12 +74,12 @@ export const deleteFile = tool({
     }
 
     if (deleted.length === 0) {
-      return { error: errors.join(', ') };
+      return { error: errors.join(", ") };
     }
 
-    const msg = `Deleted ${deleted.join(', ')}`;
+    const msg = `Deleted ${deleted.join(", ")}`;
     return {
-      message: errors.length ? `${msg} (errors: ${errors.join(', ')})` : msg,
+      message: errors.length ? `${msg} (errors: ${errors.join(", ")})` : msg,
       silent: true,
     };
   },

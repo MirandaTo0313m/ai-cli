@@ -1,0 +1,73 @@
+---
+title: Configuration
+description: Configure models, aliases, and settings.
+order: 3
+---
+
+## Config file
+
+Settings are stored in `~/.ai-cli/config.json`.
+
+```json
+{
+  "apiKey": "your-key",
+  "model": "anthropic/claude-sonnet-4.5",
+  "review": false
+}
+```
+
+<Properties>
+  <Property name="apiKey" type="string" required>
+    Your Vercel AI Gateway API key.
+  </Property>
+  <Property name="model" type="string" default="anthropic/claude-sonnet-4.5">
+    Default model for all sessions.
+  </Property>
+  <Property name="review" type="boolean" default="false">
+    Enable automatic code review after agent changes.
+  </Property>
+</Properties>
+
+## Default model
+
+Change the default model with the `-m` flag:
+
+```bash
+ai -m gpt-5 "hello"
+```
+
+Or set it permanently via `/settings` in interactive mode.
+
+## Aliases
+
+Create command aliases in interactive mode:
+
+```bash
+/alias review "review this code for bugs and suggest fixes"
+```
+
+Then use it:
+
+```bash
+ai review
+```
+
+<Callout type="tip">
+  Aliases are great for workflows you repeat often, like code review, commit messages, or PR descriptions.
+</Callout>
+
+## Environment variables
+
+<Properties>
+  <Property name="AI_GATEWAY_API_KEY" type="string">
+    API key override. Takes precedence over the config file value.
+  </Property>
+</Properties>
+
+## Storage paths
+
+| Path | Purpose |
+| --- | --- |
+| `~/.ai-cli/config.json` | Config and API key |
+| `~/.ai-cli/chats/` | Chat history |
+| `~/.ai-cli/memories.json` | Persistent memories |

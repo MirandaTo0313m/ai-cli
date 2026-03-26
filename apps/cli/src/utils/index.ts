@@ -1,11 +1,11 @@
-import { DEFAULT_MODEL } from './constants.js';
+import { DEFAULT_MODEL } from "./constants.js";
 
 export async function readStdin(): Promise<string> {
   const chunks: string[] = [];
   for await (const chunk of process.stdin) {
     chunks.push(chunk.toString());
   }
-  return chunks.join('').trim();
+  return chunks.join("").trim();
 }
 
 export function showHelp(_version: string): void {

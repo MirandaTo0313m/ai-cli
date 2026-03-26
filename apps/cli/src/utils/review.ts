@@ -1,25 +1,28 @@
-import { execSync } from 'node:child_process';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { type ModelMessage, streamText } from 'ai';
-import { SKILLS_DIR } from '../config/paths.js';
-import type { StreamCallbacks } from '../hooks/chat.js';
-import { editFile } from '../tools/edit-file.js';
-import { fetchUrl } from '../tools/fetch.js';
-import { killProcess } from '../tools/kill-process.js';
-import { readFile } from '../tools/read-file.js';
-import { readProcessLogs } from '../tools/read-process-logs.js';
-import { runCommand } from '../tools/run-command.js';
-import { searchInFiles } from '../tools/search-in-files.js';
-import { startProcess } from '../tools/start-process.js';
-import { writeFile } from '../tools/write-file.js';
-import { AI_CLI_HEADERS } from './constants.js';
-import { log as debug } from './debug.js';
-import { extractJsonStringValue } from './json-parse.js';
-import { toolActions } from './prompt.js';
-import { smartStop } from './stop-condition.js';
+import { execSync } from "node:child_process";
+import * as fs from "node:fs";
+import * as path from "node:path";
 
-const REVIEW_COMPLETE_MARKER = 'REVIEW_COMPLETE';
+import { streamText } from 'ai';
+import type { ModelMessage } from 'ai';
+
+import { SKILLS_DIR } from "../config/paths.js";
+import type { StreamCallbacks } from "../hooks/chat.js";
+import { editFile } from "../tools/edit-file.js";
+import { fetchUrl } from "../tools/fetch.js";
+import { killProcess } from "../tools/kill-process.js";
+import { readFile } from "../tools/read-file.js";
+import { readProcessLogs } from "../tools/read-process-logs.js";
+import { runCommand } from "../tools/run-command.js";
+import { searchInFiles } from "../tools/search-in-files.js";
+import { startProcess } from "../tools/start-process.js";
+import { writeFile } from "../tools/write-file.js";
+import { AI_CLI_HEADERS } from "./constants.js";
+import { log as debug } from "./debug.js";
+import { extractJsonStringValue } from "./json-parse.js";
+import { toolActions } from "./prompt.js";
+import { smartStop } from "./stop-condition.js";
+
+const REVIEW_COMPLETE_MARKER = "REVIEW_COMPLETE";
 
 function stripFrontmatter(content: string): string {
   const match = content.match(/^---\n[\s\S]*?\n---\n([\s\S]*)$/);
@@ -27,21 +30,21 @@ function stripFrontmatter(content: string): string {
 }
 
 function loadAgentBrowserSkill(): string | null {
-  const localPath = path.join(SKILLS_DIR, 'agent-browser', 'SKILL.md');
+  const localPath = path.join(SKILLS_DIR, "agent-browser", "SKILL.md");
   try {
-    return stripFrontmatter(fs.readFileSync(localPath, 'utf-8'));
+    return stripFrontmatter(fs.readFileSync(localPath, "utf8"));
   } catch {}
 
   try {
-    const globalRoot = execSync('npm root -g', { encoding: 'utf-8' }).trim();
+    const globalRoot = execSync("npm root -g", { encoding: "utf8" }).trim();
     const globalPath = path.join(
       globalRoot,
-      'agent-browser',
-      'skills',
-      'agent-browser',
-      'SKILL.md',
+      "agent-browser",
+      "skills",
+      "agent-browser",
+      "SKILL.md"
     );
-    return stripFrontmatter(fs.readFileSync(globalPath, 'utf-8'));
+    return stripFrontmatter(fs.readFileSync(globalPath, "utf8"));
   } catch {}
 
   return null;
@@ -105,11 +108,11 @@ ${browserSkill}
 
 function buildDiffContext(
   originalTask: string,
-  changedFiles: { path: string; original: string | null; current: string }[],
+  changedFiles: { path: string; original: string | null; current: string }[]
 ): string {
   const sections: string[] = [];
   sections.push(`Original task: ${originalTask}`);
-  sections.push('');
+  sections.push("");
   sections.push(`Files changed (${changedFiles.length}):`);
 
   for (const file of changedFiles) {
@@ -125,9 +128,9 @@ function buildDiffContext(
   }
 
   sections.push(
-    '\nReview these changes for severe/high-priority issues. Fix any you find with editFile. Output REVIEW_COMPLETE when done.',
+    "\nReview these changes for severe/high-priority issues. Fix any you find with editFile. Output REVIEW_COMPLETE when done."
   );
-  return sections.join('\n');
+  return sections.join("\n");
 }
 
 export interface ReviewOptions {
@@ -148,15 +151,15 @@ export interface ReviewResult {
 }
 
 function isAnthropicModel(model: string): boolean {
-  return model.startsWith('anthropic/');
+  return model.startsWith("anthropic/");
 }
 
 const ANTHROPIC_CACHE_CONTROL = {
-  anthropic: { cacheControl: { type: 'ephemeral' as const } },
+  anthropic: { cacheControl: { type: "ephemeral" as const } },
 };
 
 export async function reviewLoop(
-  options: ReviewOptions,
+  options: ReviewOptions
 ): Promise<ReviewResult> {
   const {
     model,
@@ -176,21 +179,21 @@ export async function reviewLoop(
   };
 
   const filesWithContent = changedFileRefs.map((f) => {
-    let current = '';
+    let current = "";
     try {
-      current = fs.readFileSync(f.path, 'utf-8');
+      current = fs.readFileSync(f.path, "utf8");
     } catch {
-      current = '(file not found or unreadable)';
+      current = "(file not found or unreadable)";
     }
     return { ...f, current };
   });
 
-  if (filesWithContent.length === 0) return result;
+  if (filesWithContent.length === 0) {return result;}
 
   const sys = buildReviewSystemPrompt(pm);
   const systemParam = isAnthropicModel(model)
     ? {
-        role: 'system' as const,
+        role: "system" as const,
         content: sys,
         providerOptions: ANTHROPIC_CACHE_CONTROL,
       }
@@ -209,18 +212,18 @@ export async function reviewLoop(
   };
 
   for (let i = 0; i < maxIterations; i++) {
-    if (abortSignal?.aborted) break;
+    if (abortSignal?.aborted) {break;}
 
     result.iterations = i + 1;
     debug(`review: iteration ${i + 1}/${maxIterations}`);
     onPhase?.(`review pass ${i + 1}/${maxIterations}`);
 
     const freshContent = changedFileRefs.map((f) => {
-      let current = '';
+      let current = "";
       try {
-        current = fs.readFileSync(f.path, 'utf-8');
+        current = fs.readFileSync(f.path, "utf8");
       } catch {
-        current = '(file not found or unreadable)';
+        current = "(file not found or unreadable)";
       }
       return { ...f, current };
     });
@@ -230,28 +233,28 @@ export async function reviewLoop(
         ? buildDiffContext(originalTask, freshContent)
         : `Previous review pass made fixes. Review the current state of changed files again for any remaining severe/high-priority issues.\n\n${buildDiffContext(originalTask, freshContent)}`;
 
-    const history: ModelMessage[] = [{ role: 'user', content: userMessage }];
+    const history: ModelMessage[] = [{ role: "user", content: userMessage }];
 
-    let buffer = '';
+    let buffer = "";
     let silent = false;
     let madeEdits = false;
     let streamError: Error | null = null;
-    let currentToolLabel = '';
-    let reasoning = '';
+    let currentToolLabel = "";
+    let reasoning = "";
     let reasoningStart = 0;
     let editStreamActive = false;
-    let editStreamArgs = '';
+    let editStreamArgs = "";
     let editStreamLastCount = 0;
 
     const flushReasoning = () => {
       if (reasoning && reasoningStart) {
         callbacks.onReasoning(reasoning, Date.now() - reasoningStart);
-        reasoning = '';
+        reasoning = "";
         reasoningStart = 0;
       }
     };
 
-    callbacks.onStatus('thinking...');
+    callbacks.onStatus("thinking...");
 
     const stream = streamText({
       model,
@@ -268,104 +271,104 @@ export async function reviewLoop(
       for await (const part of stream.fullStream) {
         const partType = part.type as string;
 
-        if (partType === 'start-step') {
+        if (partType === "start-step") {
           if (buffer) {
-            callbacks.onRecord('assistant', buffer);
-            callbacks.onPending('');
-            buffer = '';
+            callbacks.onRecord("assistant", buffer);
+            callbacks.onPending("");
+            buffer = "";
           }
           silent = false;
         }
 
         if (
           silent &&
-          partType !== 'tool-call' &&
-          partType !== 'tool-result' &&
-          partType !== 'tool-error' &&
-          partType !== 'tool-input-start' &&
-          partType !== 'tool-input-delta' &&
-          partType !== 'finish-step'
+          partType !== "tool-call" &&
+          partType !== "tool-result" &&
+          partType !== "tool-error" &&
+          partType !== "tool-input-start" &&
+          partType !== "tool-input-delta" &&
+          partType !== "finish-step"
         ) {
           continue;
         }
 
         switch (partType) {
-          case 'error': {
+          case "error": {
             const errorPart = part as { error?: Error };
-            streamError = errorPart.error ?? new Error('unknown review error');
+            streamError = errorPart.error ?? new Error("unknown review error");
             break;
           }
 
-          case 'tool-error': {
+          case "tool-error": {
             debug(`review tool error: ${JSON.stringify(part)}`);
             editStreamActive = false;
-            callbacks.onStatus('thinking...');
+            callbacks.onStatus("thinking...");
             break;
           }
 
-          case 'reasoning-delta': {
+          case "reasoning-delta": {
             const rp = part as { text?: string };
             if (rp.text) {
-              if (!reasoningStart) reasoningStart = Date.now();
+              if (!reasoningStart) {reasoningStart = Date.now();}
               reasoning += rp.text;
               callbacks.onStatus(
-                reasoning.replace(/\s+/g, ' ').trim().slice(-80),
+                reasoning.replaceAll(/\s+/g, " ").trim().slice(-80)
               );
             }
             break;
           }
 
-          case 'tool-input-start': {
+          case "tool-input-start": {
             const tcs = part as Record<string, unknown>;
             if (
-              typeof tcs.toolName === 'string' &&
-              tcs.toolName === 'editFile' &&
+              typeof tcs.toolName === "string" &&
+              tcs.toolName === "editFile" &&
               callbacks.onEditStream
             ) {
               flushReasoning();
               editStreamActive = true;
-              editStreamArgs = '';
+              editStreamArgs = "";
               editStreamLastCount = 0;
-              callbacks.onStatus('Editing...');
+              callbacks.onStatus("Editing...");
             } else {
               editStreamActive = false;
               if (
-                typeof tcs.toolName === 'string' &&
-                tcs.toolName === 'writeFile'
+                typeof tcs.toolName === "string" &&
+                tcs.toolName === "writeFile"
               ) {
                 flushReasoning();
-                callbacks.onStatus('Writing...');
+                callbacks.onStatus("Writing...");
               }
             }
             break;
           }
 
-          case 'tool-input-delta': {
+          case "tool-input-delta": {
             if (editStreamActive && callbacks.onEditStream) {
               const tcd = part as Record<string, unknown>;
-              const delta = typeof tcd.delta === 'string' ? tcd.delta : '';
+              const delta = typeof tcd.delta === "string" ? tcd.delta : "";
               editStreamArgs += delta;
 
-              const fp = extractJsonStringValue(editStreamArgs, 'filePath');
+              const fp = extractJsonStringValue(editStreamArgs, "filePath");
               if (fp) {
-                const old = extractJsonStringValue(editStreamArgs, 'oldText');
-                const new_ = extractJsonStringValue(editStreamArgs, 'newText');
+                const old = extractJsonStringValue(editStreamArgs, "oldText");
+                const new_ = extractJsonStringValue(editStreamArgs, "newText");
 
-                const oldLines = old ? old.value.split('\n').slice(0, 5) : [];
-                const newLines = new_ ? new_.value.split('\n').slice(0, 5) : [];
+                const oldLines = old ? old.value.split("\n").slice(0, 5) : [];
+                const newLines = new_ ? new_.value.split("\n").slice(0, 5) : [];
                 const totalCount = oldLines.length + newLines.length;
 
                 if (totalCount > editStreamLastCount) {
                   editStreamLastCount = totalCount;
-                  const totalOld = old ? old.value.split('\n').length : 0;
-                  const totalNew = new_ ? new_.value.split('\n').length : 0;
+                  const totalOld = old ? old.value.split("\n").length : 0;
+                  const totalNew = new_ ? new_.value.split("\n").length : 0;
                   const more = Math.max(totalOld, totalNew) - 5;
 
                   callbacks.onEditStream(
                     fp.value,
                     oldLines,
                     newLines,
-                    more > 0 ? more : 0,
+                    Math.max(more, 0)
                   );
                 }
               }
@@ -373,7 +376,7 @@ export async function reviewLoop(
             break;
           }
 
-          case 'tool-call': {
+          case "tool-call": {
             flushReasoning();
             const tc = part as {
               toolName: string;
@@ -389,52 +392,52 @@ export async function reviewLoop(
             const input = tc.input;
             let status: string;
             const wasEditStreamed =
-              editStreamActive && tc.toolName === 'editFile';
-            if (wasEditStreamed) editStreamActive = false;
+              editStreamActive && tc.toolName === "editFile";
+            if (wasEditStreamed) {editStreamActive = false;}
 
-            if (tc.toolName === 'editFile' || tc.toolName === 'writeFile') {
+            if (tc.toolName === "editFile" || tc.toolName === "writeFile") {
               madeEdits = true;
             }
 
-            if (tc.toolName === 'readFile') {
-              const f = input?.filePath || 'file';
+            if (tc.toolName === "readFile") {
+              const f = input?.filePath || "file";
               status = `Reading ${f}`;
               currentToolLabel = `Read ${f}`;
-            } else if (tc.toolName === 'runCommand' && input?.command) {
+            } else if (tc.toolName === "runCommand" && input?.command) {
               status = `Running ${input.command.slice(0, 70)}`;
-              currentToolLabel = '';
-            } else if (tc.toolName === 'writeFile') {
-              const f = input?.filePath || 'file';
+              currentToolLabel = "";
+            } else if (tc.toolName === "writeFile") {
+              const f = input?.filePath || "file";
               status = `Writing ${f}`;
-              currentToolLabel = '';
-            } else if (tc.toolName === 'editFile') {
-              const f = input?.filePath || 'file';
+              currentToolLabel = "";
+            } else if (tc.toolName === "editFile") {
+              const f = input?.filePath || "file";
               status = `Editing ${f}`;
-              currentToolLabel = '';
-            } else if (tc.toolName === 'searchInFiles') {
+              currentToolLabel = "";
+            } else if (tc.toolName === "searchInFiles") {
               const q = input?.query
                 ? String(input.query).slice(0, 60)
-                : 'code';
-              const d = input?.directory || '';
+                : "code";
+              const d = input?.directory || "";
               const label = d ? `"${q}" in ${d}` : `"${q}"`;
               status = `Searching: ${label}`;
               currentToolLabel = `Searched: ${label}`;
-            } else if (tc.toolName === 'startProcess') {
-              const cmd = input?.command || 'server';
+            } else if (tc.toolName === "startProcess") {
+              const cmd = input?.command || "server";
               status = `Starting ${cmd.slice(0, 60)}`;
-              currentToolLabel = '';
-            } else if (tc.toolName === 'readProcessLogs') {
-              status = 'Reading logs...';
-              currentToolLabel = '';
-            } else if (tc.toolName === 'killProcess') {
-              status = 'Stopping server...';
-              currentToolLabel = '';
-            } else if (tc.toolName === 'fetchUrl') {
-              status = 'Fetching URL...';
-              currentToolLabel = '';
+              currentToolLabel = "";
+            } else if (tc.toolName === "readProcessLogs") {
+              status = "Reading logs...";
+              currentToolLabel = "";
+            } else if (tc.toolName === "killProcess") {
+              status = "Stopping server...";
+              currentToolLabel = "";
+            } else if (tc.toolName === "fetchUrl") {
+              status = "Fetching URL...";
+              currentToolLabel = "";
             } else {
-              status = toolActions[tc.toolName] ?? 'Working';
-              currentToolLabel = '';
+              status = toolActions[tc.toolName] ?? "Working";
+              currentToolLabel = "";
             }
             if (!wasEditStreamed) {
               callbacks.onStatus(status);
@@ -442,7 +445,7 @@ export async function reviewLoop(
             break;
           }
 
-          case 'tool-result': {
+          case "tool-result": {
             const tr = part as {
               toolName?: string;
               output?: {
@@ -457,51 +460,51 @@ export async function reviewLoop(
             debug(`review tool-result: ${tr.toolName}`);
             const out = tr.output;
 
-            if (out?.message && !out.message.startsWith('User denied')) {
+            if (out?.message && !out.message.startsWith("User denied")) {
               result.issuesFixed++;
             }
 
-            if (out?.tree && typeof out.tree === 'string') {
-              const treeLines = out.tree.split('\n');
-              const dirName = treeLines[0] || '.';
-              const treeBody = treeLines.slice(1).join('\n');
+            if (out?.tree && typeof out.tree === "string") {
+              const treeLines = out.tree.split("\n");
+              const dirName = treeLines[0] || ".";
+              const treeBody = treeLines.slice(1).join("\n");
               const label = currentToolLabel || `Listed ${dirName}`;
-              callbacks.onMessage('tool', `> ${label}\n${treeBody}`);
+              callbacks.onMessage("tool", `> ${label}\n${treeBody}`);
               silent = true;
-            } else if (out?.output && typeof out.output === 'string') {
-              if (!out.output.startsWith('$ ') && currentToolLabel) {
+            } else if (out?.output && typeof out.output === "string") {
+              if (!out.output.startsWith("$ ") && currentToolLabel) {
                 callbacks.onMessage(
-                  'tool',
-                  `> ${currentToolLabel}\n${out.output}`,
+                  "tool",
+                  `> ${currentToolLabel}\n${out.output}`
                 );
               } else {
-                callbacks.onMessage('tool', out.output);
+                callbacks.onMessage("tool", out.output);
               }
               silent = true;
-            } else if (out?.answer && typeof out.answer === 'string') {
-              const label = currentToolLabel || 'Result';
-              callbacks.onMessage('tool', `> ${label}\n${out.answer}`);
+            } else if (out?.answer && typeof out.answer === "string") {
+              const label = currentToolLabel || "Result";
+              callbacks.onMessage("tool", `> ${label}\n${out.answer}`);
               silent = true;
-            } else if (out?.message && typeof out.message === 'string') {
-              callbacks.onMessage('info', out.message);
+            } else if (out?.message && typeof out.message === "string") {
+              callbacks.onMessage("info", out.message);
               silent = out.silent === true;
-            } else if (out?.error && typeof out.error === 'string') {
-              callbacks.onMessage('error', out.error);
+            } else if (out?.error && typeof out.error === "string") {
+              callbacks.onMessage("error", out.error);
               silent = false;
             } else if (out?.silent === true) {
               silent = true;
             }
 
             if (silent) {
-              callbacks.onStatus('');
+              callbacks.onStatus("");
             }
             break;
           }
 
-          case 'text-delta': {
+          case "text-delta": {
             flushReasoning();
             const td = part as { text: string };
-            callbacks.onStatus('');
+            callbacks.onStatus("");
             buffer += td.text;
             if (!buffer.includes(REVIEW_COMPLETE_MARKER)) {
               callbacks.onPending(buffer);
@@ -509,7 +512,7 @@ export async function reviewLoop(
             break;
           }
 
-          case 'finish-step': {
+          case "finish-step": {
             flushReasoning();
             const sf = part as { finishReason?: string };
             debug(`review finish-step: ${sf.finishReason}`);
@@ -517,29 +520,29 @@ export async function reviewLoop(
           }
         }
 
-        if (streamError) break;
+        if (streamError) {break;}
       }
-    } catch (e) {
-      streamError = e instanceof Error ? e : new Error(String(e));
+    } catch (error) {
+      streamError = error instanceof Error ? error : new Error(String(error));
     }
 
     flushReasoning();
-    callbacks.onStatus('');
+    callbacks.onStatus("");
 
     if (streamError) {
       debug(`review: error in iteration ${i + 1}: ${streamError.message}`);
       break;
     }
 
-    const displayBuffer = buffer.replace(REVIEW_COMPLETE_MARKER, '').trim();
+    const displayBuffer = buffer.replace(REVIEW_COMPLETE_MARKER, "").trim();
     if (displayBuffer) {
       if (silent) {
-        callbacks.onRecord('assistant', displayBuffer);
+        callbacks.onRecord("assistant", displayBuffer);
       } else {
-        callbacks.onMessage('assistant', displayBuffer);
+        callbacks.onMessage("assistant", displayBuffer);
       }
     }
-    callbacks.onPending('');
+    callbacks.onPending("");
 
     if (madeEdits) {
       result.issuesFound += result.issuesFixed;
@@ -547,13 +550,13 @@ export async function reviewLoop(
 
     if (buffer.includes(REVIEW_COMPLETE_MARKER)) {
       debug(`review: complete after ${i + 1} iteration(s)`);
-      onPhase?.('review complete');
+      onPhase?.("review complete");
       break;
     }
 
     if (!madeEdits) {
-      debug('review: no edits made, stopping');
-      onPhase?.('review complete');
+      debug("review: no edits made, stopping");
+      onPhase?.("review complete");
       break;
     }
   }

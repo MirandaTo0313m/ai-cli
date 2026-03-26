@@ -1,5 +1,6 @@
-import ansi from 'ansi-escapes';
-import { dim } from '../utils/color.js';
+import ansi from "ansi-escapes";
+
+import { dim } from "../utils/color.js";
 
 export interface InlineMenuOptions {
   /** Maximum number of items visible at once. Defaults to 8. */
@@ -74,7 +75,7 @@ export class InlineMenu {
 
   /** Update the filter text. Resets selection to 0 and re-renders. */
   setFilter(query: string): void {
-    if (!this._isOpen) return;
+    if (!this._isOpen) {return;}
     this.applyFilter(query);
     this.selectedIndex = 0;
     this.render();
@@ -82,24 +83,24 @@ export class InlineMenu {
 
   /** Move selection up by one. */
   moveUp(): void {
-    if (!this._isOpen || this.filtered.length === 0) return;
+    if (!this._isOpen || this.filtered.length === 0) {return;}
     this.selectedIndex = Math.max(0, this.selectedIndex - 1);
     this.render();
   }
 
   /** Move selection down by one. */
   moveDown(): void {
-    if (!this._isOpen || this.filtered.length === 0) return;
+    if (!this._isOpen || this.filtered.length === 0) {return;}
     this.selectedIndex = Math.min(
       this.filtered.length - 1,
-      this.selectedIndex + 1,
+      this.selectedIndex + 1
     );
     this.render();
   }
 
   /** Get the currently highlighted item, or null if nothing matches. */
   getSelected(): string | null {
-    if (this.filtered.length === 0) return null;
+    if (this.filtered.length === 0) {return null;}
     return this.filtered[this.selectedIndex] ?? null;
   }
 
@@ -112,7 +113,7 @@ export class InlineMenu {
 
   private applyFilter(query: string): void {
     if (!query) {
-      this.filtered = this.items.slice();
+      this.filtered = [...this.items];
     } else if (this.filterAndSortFn) {
       this.filtered = this.filterAndSortFn(this.items, query);
     } else {
@@ -155,7 +156,7 @@ export class InlineMenu {
     const total = this.filtered.length;
     const start = Math.min(
       Math.max(0, this.selectedIndex - this.maxVisible + 1),
-      Math.max(0, total - this.maxVisible),
+      Math.max(0, total - this.maxVisible)
     );
     const toShow = this.filtered.slice(start, start + this.maxVisible);
 
@@ -172,7 +173,7 @@ export class InlineMenu {
     if (total > this.maxVisible) {
       const hidden = total - toShow.length;
       process.stdout.write(
-        `\n${ansi.eraseLine}${dim(`    ... ${hidden} more`)}`,
+        `\n${ansi.eraseLine}${dim(`    ... ${hidden} more`)}`
       );
       this.lineCount = toShow.length + 1;
     } else {

@@ -7,6 +7,4 @@ gateway
 *.tsbuildinfo
 .env*
 !.env.example
-
-# opensrc - source code for packages
 opensrc/

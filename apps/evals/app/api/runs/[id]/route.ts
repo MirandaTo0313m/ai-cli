@@ -1,11 +1,12 @@
-import { NextResponse } from 'next/server';
-import { eq } from 'drizzle-orm';
-import { db } from '@/lib/db';
-import { evalRuns, evalTasks, evalComparisons } from '@/lib/db/schema';
+import { eq } from "drizzle-orm";
+import { NextResponse } from "next/server";
+
+import { db } from "@/lib/db";
+import { evalRuns, evalTasks, evalComparisons } from "@/lib/db/schema";
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
 
@@ -16,7 +17,7 @@ export async function GET(
     .limit(1);
 
   if (run.length === 0) {
-    return NextResponse.json({ error: 'Run not found' }, { status: 404 });
+    return NextResponse.json({ error: "Run not found" }, { status: 404 });
   }
 
   const tasks = await db
@@ -34,7 +35,7 @@ export async function GET(
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
 

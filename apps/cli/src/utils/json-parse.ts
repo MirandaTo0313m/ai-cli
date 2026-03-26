@@ -1,13 +1,13 @@
 export function extractJsonStringValue(
   text: string,
-  key: string,
+  key: string
 ): { value: string; complete: boolean } | null {
   const marker = `"${key}":"`;
   const idx = text.indexOf(marker);
-  if (idx < 0) return null;
+  if (idx === -1) {return null;}
 
   const start = idx + marker.length;
-  let value = '';
+  let value = "";
   let escaped = false;
   let complete = false;
 
@@ -15,36 +15,42 @@ export function extractJsonStringValue(
     const ch = text[i];
     if (escaped) {
       switch (ch) {
-        case 'n':
-          value += '\n';
+        case "n": {
+          value += "\n";
           break;
-        case 't':
-          value += '\t';
+        }
+        case "t": {
+          value += "\t";
           break;
-        case '"':
+        }
+        case '"': {
           value += '"';
           break;
-        case '\\':
-          value += '\\';
+        }
+        case "\\": {
+          value += "\\";
           break;
-        case 'r':
-          value += '\r';
+        }
+        case "r": {
+          value += "\r";
           break;
-        case 'u': {
+        }
+        case "u": {
           const hex = text.slice(i + 1, i + 5);
           if (hex.length === 4 && /^[0-9a-fA-F]{4}$/.test(hex)) {
-            value += String.fromCharCode(parseInt(hex, 16));
+            value += String.fromCodePoint(Number.parseInt(hex, 16));
             i += 4;
           } else {
-            value += 'u';
+            value += "u";
           }
           break;
         }
-        default:
+        default: {
           value += ch;
+        }
       }
       escaped = false;
-    } else if (ch === '\\') {
+    } else if (ch === "\\") {
       escaped = true;
     } else if (ch === '"') {
       complete = true;

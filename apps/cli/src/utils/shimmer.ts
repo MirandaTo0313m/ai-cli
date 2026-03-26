@@ -1,4 +1,4 @@
-import { isColorEnabled } from './color.js';
+import { isColorEnabled } from "./color.js";
 
 /** Half-width of the shimmer glow (characters from center). */
 const SHIMMER_RADIUS = 8;
@@ -16,7 +16,7 @@ const GAP_FRAMES = 6;
  */
 function charShade(charIdx: number, shimmerPos: number): number {
   const d = Math.abs(charIdx - shimmerPos);
-  if (d >= SHIMMER_RADIUS) return BASE;
+  if (d >= SHIMMER_RADIUS) {return BASE;}
   // Cosine interpolation: 1.0 at center → 0.0 at SHIMMER_RADIUS
   const t = (1 + Math.cos((d / SHIMMER_RADIUS) * Math.PI)) / 2;
   return Math.round(BASE + (PEAK - BASE) * t);
@@ -33,21 +33,21 @@ function charShade(charIdx: number, shimmerPos: number): number {
  * When NO_COLOR is set, returns the plain text.
  */
 export function shimmerText(text: string, pos: number): string {
-  if (!isColorEnabled() || text.length === 0) return text;
+  if (!isColorEnabled() || text.length === 0) {return text;}
 
-  let result = '';
+  let result = "";
   let prevShade = -1;
 
   for (let i = 0; i < text.length; i++) {
     const shade = charShade(i, pos);
     if (shade !== prevShade) {
-      result += `\x1b[38;5;${shade}m`;
+      result += `\x1B[38;5;${shade}m`;
       prevShade = shade;
     }
     result += text[i];
   }
 
-  result += '\x1b[0m';
+  result += "\x1B[0m";
   return result;
 }
 

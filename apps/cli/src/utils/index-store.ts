@@ -1,10 +1,11 @@
-import * as crypto from 'node:crypto';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { BASE_DIR, ensureBaseDir } from '../config/paths.js';
-import { logError } from './errorlog.js';
+import * as crypto from "node:crypto";
+import * as fs from "node:fs";
+import * as path from "node:path";
 
-const INDEXES_DIR = path.join(BASE_DIR, 'indexes');
+import { BASE_DIR, ensureBaseDir } from "../config/paths.js";
+import { logError } from "./errorlog.js";
+
+const INDEXES_DIR = path.join(BASE_DIR, "indexes");
 
 export interface Chunk {
   file: string;
@@ -31,9 +32,9 @@ function indexPath(projectHash: string): string {
 
 function hashProject(projectPath: string): string {
   return crypto
-    .createHash('sha256')
+    .createHash("sha256")
     .update(projectPath)
-    .digest('hex')
+    .digest("hex")
     .slice(0, 16);
 }
 
@@ -45,11 +46,11 @@ export function loadIndex(projectPath?: string): ProjectIndex | null {
   const hash = getProjectHash(projectPath);
   const file = indexPath(hash);
   try {
-    if (!fs.existsSync(file)) return null;
-    const data = JSON.parse(fs.readFileSync(file, 'utf-8')) as ProjectIndex;
+    if (!fs.existsSync(file)) {return null;}
+    const data = JSON.parse(fs.readFileSync(file, "utf8")) as ProjectIndex;
     return data;
-  } catch (e) {
-    logError(e);
+  } catch (error) {
+    logError(error);
     return null;
   }
 }
@@ -60,7 +61,7 @@ export function saveIndex(index: ProjectIndex): void {
     fs.mkdirSync(INDEXES_DIR, { recursive: true });
   }
   const file = indexPath(index.projectHash);
-  fs.writeFileSync(file, JSON.stringify(index), 'utf-8');
+  fs.writeFileSync(file, JSON.stringify(index), "utf8");
 }
 
 /**
@@ -69,9 +70,9 @@ export function saveIndex(index: ProjectIndex): void {
 export function getStaleFiles(
   allFiles: string[],
   index: ProjectIndex | null,
-  baseDir: string,
+  baseDir: string
 ): string[] {
-  if (!index) return allFiles;
+  if (!index) {return allFiles;}
 
   const stale: string[] = [];
   for (const f of allFiles) {
@@ -98,9 +99,9 @@ const CHUNK_OVERLAP = 5; // overlap lines
 
 export function chunkFile(
   file: string,
-  content: string,
-): Array<{ file: string; startLine: number; endLine: number; text: string }> {
-  const lines = content.split('\n');
+  content: string
+): { file: string; startLine: number; endLine: number; text: string }[] {
+  const lines = content.split("\n");
   if (lines.length <= CHUNK_SIZE) {
     return [
       {
@@ -112,12 +113,12 @@ export function chunkFile(
     ];
   }
 
-  const chunks: Array<{
+  const chunks: {
     file: string;
     startLine: number;
     endLine: number;
     text: string;
-  }> = [];
+  }[] = [];
 
   for (let i = 0; i < lines.length; i += CHUNK_SIZE - CHUNK_OVERLAP) {
     const end = Math.min(i + CHUNK_SIZE, lines.length);
@@ -126,9 +127,9 @@ export function chunkFile(
       file,
       startLine: i + 1,
       endLine: end,
-      text: `${file}:${i + 1}-${end}\n${chunkLines.join('\n').slice(0, 2000)}`,
+      text: `${file}:${i + 1}-${end}\n${chunkLines.join("\n").slice(0, 2000)}`,
     });
-    if (end >= lines.length) break;
+    if (end >= lines.length) {break;}
   }
 
   return chunks;

@@ -1,36 +1,37 @@
-import arg from 'arg';
-import { chatCommand } from './commands/chat.js';
-import { initCommand } from './commands/init.js';
-import { inkCommand } from './commands/ink.js';
-import { listModels } from './commands/models.js';
-import { printCommand } from './commands/print.js';
-import { getApiKey, getModel } from './config/index.js';
-import { getSetting } from './config/settings.js';
-import { DEFAULT_MODEL } from './utils/constants.js';
-import { readStdin, showHelp } from './utils/index.js';
-import { resolveModel } from './utils/models.js';
+import arg from "arg";
+
+import { chatCommand } from "./commands/chat.js";
+import { initCommand } from "./commands/init.js";
+import { inkCommand } from "./commands/ink.js";
+import { listModels } from "./commands/models.js";
+import { printCommand } from "./commands/print.js";
+import { getApiKey, getModel } from "./config/index.js";
+import { getSetting } from "./config/settings.js";
+import { DEFAULT_MODEL } from "./utils/constants.js";
+import { readStdin, showHelp } from "./utils/index.js";
+import { resolveModel } from "./utils/models.js";
 
 declare const __VERSION__: string;
-const version = typeof __VERSION__ !== 'undefined' ? __VERSION__ : '0.0.2';
+const version = __VERSION__ !== undefined ? __VERSION__ : "0.0.2";
 
 interface Args {
-  '--model'?: string;
-  '--help'?: boolean;
-  '--version'?: boolean;
-  '--list'?: boolean;
-  '--image'?: string;
-  '--no-color'?: boolean;
-  '--resume'?: string;
-  '--plan'?: boolean;
-  '--print'?: boolean;
-  '--json'?: boolean;
-  '--system'?: string;
-  '--force'?: boolean;
-  '--no-save'?: boolean;
-  '--timeout'?: number;
-  '--quiet'?: boolean;
-  '--verbose'?: boolean;
-  '--fast'?: boolean;
+  "--model"?: string;
+  "--help"?: boolean;
+  "--version"?: boolean;
+  "--list"?: boolean;
+  "--image"?: string;
+  "--no-color"?: boolean;
+  "--resume"?: string;
+  "--plan"?: boolean;
+  "--print"?: boolean;
+  "--json"?: boolean;
+  "--system"?: string;
+  "--force"?: boolean;
+  "--no-save"?: boolean;
+  "--timeout"?: number;
+  "--quiet"?: boolean;
+  "--verbose"?: boolean;
+  "--fast"?: boolean;
   _: string[];
 }
 
@@ -38,63 +39,63 @@ async function main() {
   let args: Args;
   try {
     args = arg({
-      '--model': String,
-      '--help': Boolean,
-      '--version': Boolean,
-      '--list': Boolean,
-      '--image': String,
-      '--no-color': Boolean,
-      '--resume': String,
-      '--plan': Boolean,
-      '--print': Boolean,
-      '--json': Boolean,
-      '--system': String,
-      '--force': Boolean,
-      '--no-save': Boolean,
-      '--timeout': Number,
-      '--quiet': Boolean,
-      '--verbose': Boolean,
-      '--fast': Boolean,
-      '-m': '--model',
-      '-h': '--help',
-      '-v': '--version',
-      '-l': '--list',
-      '-r': '--resume',
-      '-p': '--print',
-      '-q': '--quiet',
+      "--model": String,
+      "--help": Boolean,
+      "--version": Boolean,
+      "--list": Boolean,
+      "--image": String,
+      "--no-color": Boolean,
+      "--resume": String,
+      "--plan": Boolean,
+      "--print": Boolean,
+      "--json": Boolean,
+      "--system": String,
+      "--force": Boolean,
+      "--no-save": Boolean,
+      "--timeout": Number,
+      "--quiet": Boolean,
+      "--verbose": Boolean,
+      "--fast": Boolean,
+      "-m": "--model",
+      "-h": "--help",
+      "-v": "--version",
+      "-l": "--list",
+      "-r": "--resume",
+      "-p": "--print",
+      "-q": "--quiet",
     }) as Args;
-  } catch (err: unknown) {
-    if (err instanceof Error) {
-      console.error(err.message);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error(error.message);
       process.exit(1);
     }
-    console.error('unknown error');
+    console.error("unknown error");
     process.exit(1);
   }
 
-  if (args['--no-color']) {
-    process.env.NO_COLOR = '1';
+  if (args["--no-color"]) {
+    process.env.NO_COLOR = "1";
   }
 
-  if (args['--version']) {
+  if (args["--version"]) {
     console.log(version);
     process.exit(0);
   }
 
-  if (args['--help']) {
+  if (args["--help"]) {
     showHelp(version);
     process.exit(0);
   }
 
-  if (args['--list']) {
+  if (args["--list"]) {
     await listModels();
     process.exit(0);
   }
 
-  const settingsModel = getSetting('model');
+  const settingsModel = getSetting("model");
   const savedModel = getModel() || settingsModel || DEFAULT_MODEL;
 
-  if (args._.includes('init')) {
+  if (args._.includes("init")) {
     await initCommand();
     const apiKey = getApiKey();
     if (apiKey && process.stdin.isTTY) {
@@ -104,8 +105,8 @@ async function main() {
       await inkCommand({
         model: savedModel,
         version,
-        system: args['--system'],
-        fast: args['--fast'],
+        system: args["--system"],
+        fast: args["--fast"],
       });
     }
     return;
@@ -113,44 +114,44 @@ async function main() {
 
   const apiKey = getApiKey();
   if (!apiKey) {
-    console.error('no key. run: ai init');
+    console.error("no key. run: ai init");
     process.exit(1);
   }
 
   process.env.AI_GATEWAY_API_KEY = apiKey;
   globalThis.AI_SDK_LOG_WARNINGS = false;
 
-  const modelArg = args['--model'];
+  const modelArg = args["--model"];
   const model = modelArg ? await resolveModel(modelArg) : savedModel;
 
-  const headless = args['--print'] || args['--json'];
+  const headless = args["--print"] || args["--json"];
 
   if (
     !headless &&
-    (args['--force'] ||
-      args['--timeout'] ||
-      args['--no-save'] ||
-      args['--quiet'])
+    (args["--force"] ||
+      args["--timeout"] ||
+      args["--no-save"] ||
+      args["--quiet"])
   ) {
     console.error(
-      '--force, --timeout, --no-save, and --quiet require --print or --json',
+      "--force, --timeout, --no-save, and --quiet require --print or --json"
     );
     process.exit(1);
   }
 
-  if (args['--resume'] && !headless && process.stdin.isTTY) {
+  if (args["--resume"] && !headless && process.stdin.isTTY) {
     await inkCommand({
       model,
       version,
-      resume: args['--resume'],
-      planMode: args['--plan'],
-      system: args['--system'],
-      fast: args['--fast'],
+      resume: args["--resume"],
+      planMode: args["--plan"],
+      system: args["--system"],
+      fast: args["--fast"],
     });
     return;
   }
 
-  let message = args._.join(' ');
+  let message = args._.join(" ");
 
   if (!message) {
     if (!process.stdin.isTTY) {
@@ -162,13 +163,13 @@ async function main() {
         await inkCommand({
           model,
           version,
-          planMode: args['--plan'],
-          system: args['--system'],
-          fast: args['--fast'],
+          planMode: args["--plan"],
+          system: args["--system"],
+          fast: args["--fast"],
         });
         return;
       }
-      console.error('no message');
+      console.error("no message");
       process.exit(1);
     }
   }
@@ -177,17 +178,17 @@ async function main() {
     await printCommand({
       message,
       model,
-      image: args['--image'],
-      json: args['--json'],
-      force: args['--force'],
-      save: !args['--no-save'],
-      quiet: args['--quiet'],
-      verbose: args['--verbose'],
-      system: args['--system'],
-      plan: args['--plan'],
-      resume: args['--resume'],
-      timeout: args['--timeout'],
-      fast: args['--fast'],
+      image: args["--image"],
+      json: args["--json"],
+      force: args["--force"],
+      save: !args["--no-save"],
+      quiet: args["--quiet"],
+      verbose: args["--verbose"],
+      system: args["--system"],
+      plan: args["--plan"],
+      resume: args["--resume"],
+      timeout: args["--timeout"],
+      fast: args["--fast"],
       version,
     });
     return;
@@ -196,14 +197,14 @@ async function main() {
   await chatCommand({
     message,
     model,
-    image: args['--image'],
+    image: args["--image"],
     isPiped: !process.stdout.isTTY,
-    fast: args['--fast'],
+    fast: args["--fast"],
     version,
   });
 }
 
 main().catch((error) => {
-  console.error('error:', error instanceof Error ? error.message : 'unknown');
+  console.error("error:", error instanceof Error ? error.message : "unknown");
   process.exit(1);
 });

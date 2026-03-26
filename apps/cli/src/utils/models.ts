@@ -1,7 +1,7 @@
-import type { GatewayLanguageModelEntry } from '@ai-sdk/gateway';
-import { gateway } from '@ai-sdk/gateway';
+import type { GatewayLanguageModelEntry } from "@ai-sdk/gateway";
+import { gateway } from "@ai-sdk/gateway";
 
-export const GATEWAY_URL = 'https://ai-gateway.vercel.sh';
+export const GATEWAY_URL = "https://ai-gateway.vercel.sh";
 
 export type Model = GatewayLanguageModelEntry;
 
@@ -14,7 +14,7 @@ export interface ModelCapabilities {
 let cachedModels: Model[] | null = null;
 let modelsCachedAt = 0;
 const MODEL_CACHE_TTL_MS = 5 * 60 * 1000;
-const capabilitiesCache: Map<string, ModelCapabilities> = new Map();
+const capabilitiesCache = new Map<string, ModelCapabilities>();
 
 export async function fetchModels(forceRefresh = false): Promise<Model[]> {
   if (
@@ -33,19 +33,19 @@ export async function fetchModels(forceRefresh = false): Promise<Model[]> {
 export function scoreMatch(id: string, query: string): number {
   const lower = id.toLowerCase();
   const q = query.toLowerCase();
-  const normalizedId = lower.replace(/[-_.]/g, '');
-  const normalizedQ = q.replace(/[-_.]/g, '');
+  const normalizedId = lower.replaceAll(/[-_.]/g, "");
+  const normalizedQ = q.replaceAll(/[-_.]/g, "");
 
-  if (lower === q) return 1000;
-  if (normalizedId.endsWith(`/${normalizedQ}`)) return 950;
-  if (normalizedId.includes(normalizedQ)) return 900;
-  if (lower.endsWith(`/${q}`)) return 850;
-  if (lower.includes(`/${q}`)) return 800;
+  if (lower === q) {return 1000;}
+  if (normalizedId.endsWith(`/${normalizedQ}`)) {return 950;}
+  if (normalizedId.includes(normalizedQ)) {return 900;}
+  if (lower.endsWith(`/${q}`)) {return 850;}
+  if (lower.includes(`/${q}`)) {return 800;}
 
   const parts = q.split(/[-/]/);
   let score = 0;
   for (const part of parts) {
-    if (part && lower.includes(part)) score += 100;
+    if (part && lower.includes(part)) {score += 100;}
   }
 
   const idx = lower.indexOf(q);
@@ -53,7 +53,7 @@ export function scoreMatch(id: string, query: string): number {
     score += 200 - idx;
   }
 
-  if (score > 0) score += Math.max(0, 50 - id.length);
+  if (score > 0) {score += Math.max(0, 50 - id.length);}
 
   return score;
 }
@@ -62,12 +62,12 @@ export async function resolveModel(query: string): Promise<string> {
   const models = await fetchModels();
 
   const exact = models.find((m) => m.id.toLowerCase() === query.toLowerCase());
-  if (exact) return exact.id;
+  if (exact) {return exact.id;}
 
   const scored = models
     .map((m) => ({ model: m, score: scoreMatch(m.id, query) }))
     .filter((x) => x.score > 0)
-    .sort((a, b) => b.score - a.score);
+    .toSorted((a, b) => b.score - a.score);
 
   if (scored.length > 0) {
     return scored[0].model.id;
@@ -79,7 +79,7 @@ export async function resolveModel(query: string): Promise<string> {
 const REASONING_PATTERN = /\bo[134]\b|\bthinking\b|\breason/;
 
 export async function getModelCapabilities(
-  modelId: string,
+  modelId: string
 ): Promise<ModelCapabilities> {
   const cached = capabilitiesCache.get(modelId);
   if (cached) {

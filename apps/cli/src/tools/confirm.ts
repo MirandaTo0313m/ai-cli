@@ -1,5 +1,6 @@
-import { AsyncLocalStorage } from 'node:async_hooks';
-import { isAllowed } from '../utils/permissions.js';
+import { AsyncLocalStorage } from "node:async_hooks";
+
+import { isAllowed } from "../utils/permissions.js";
 
 export interface ConfirmOpts {
   tool?: string;
@@ -24,9 +25,9 @@ let queue: Promise<boolean> = Promise.resolve(true);
 
 export async function confirm(
   action: string,
-  opts?: ConfirmOpts,
+  opts?: ConfirmOpts
 ): Promise<boolean> {
-  if (forceStorage.getStore()) return true;
+  if (forceStorage.getStore()) {return true;}
 
   // Check persistent permissions first
   if (opts?.tool) {
@@ -55,14 +56,14 @@ export async function confirm(
     const result = await handler(action, opts);
     resolve(result);
     return result;
-  } catch (e) {
+  } catch (error) {
     resolve(false);
-    throw e;
+    throw error;
   }
 }
 
 export function setConfirmHandler(
-  fn: ((action: string, opts?: ConfirmOpts) => Promise<boolean>) | null,
+  fn: ((action: string, opts?: ConfirmOpts) => Promise<boolean>) | null
 ): void {
   handler = fn;
 }

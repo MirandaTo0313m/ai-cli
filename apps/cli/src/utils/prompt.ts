@@ -1,25 +1,26 @@
-import * as os from 'node:os';
-import { loadAllSkills, matchSkills } from '../skills/index.js';
+import * as os from "node:os";
+
+import { loadAllSkills, matchSkills } from "../skills/index.js";
 import {
   buildContextPrompt,
   getProjectFiles,
   loadContextFiles,
-} from './context.js';
-import { getMcpStatus } from './mcp.js';
+} from "./context.js";
+import { getMcpStatus } from "./mcp.js";
 
 export function buildSystemPrompt(
   pm: { pm: string; run: string },
   summary?: string,
   userMessage?: string,
-  options?: { planMode?: boolean; appendSystem?: string },
+  options?: { planMode?: boolean; appendSystem?: string }
 ): string {
   const cwd = process.cwd();
   const platform = os.platform();
-  const date = new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+  const date = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   });
   const contextFiles = loadContextFiles();
   const contextPrompt = buildContextPrompt(contextFiles);
@@ -92,30 +93,30 @@ When user asks to switch models, tell them the slash command to type.`;
     prompt += `\n\n<project-files>\n${projectFiles}\n</project-files>`;
   }
 
-  if (contextPrompt) prompt += `\n\n${contextPrompt}`;
+  if (contextPrompt) {prompt += `\n\n${contextPrompt}`;}
 
   if (allSkills.length > 0) {
     const skillsList = allSkills
-      .map((s) => `- ${s.name}: ${s.description || 'no description'}`)
-      .join('\n');
+      .map((s) => `- ${s.name}: ${s.description || "no description"}`)
+      .join("\n");
     prompt += `\n\nInstalled skills (use /skills to manage):\n${skillsList}`;
   }
 
   if (matchedSkills.length > 0) {
     const skillsPrompt = matchedSkills
       .map((s) => `<skill name="${s.name}">\n${s.content}\n</skill>`)
-      .join('\n\n');
+      .join("\n\n");
     prompt += `\n\nActive skills for this query:\n${skillsPrompt}`;
   }
 
   const mcpServers = getMcpStatus();
   const connectedMcp = mcpServers.filter((s) => s.connected);
   if (connectedMcp.length > 0) {
-    const mcpList = connectedMcp.map((s) => `- ${s.name}`).join('\n');
+    const mcpList = connectedMcp.map((s) => `- ${s.name}`).join("\n");
     prompt += `\n\nMCP servers connected (tools prefixed with server name):\n${mcpList}`;
   }
 
-  if (summary) prompt += `\n\nPrevious session context:\n${summary}`;
+  if (summary) {prompt += `\n\nPrevious session context:\n${summary}`;}
 
   if (options?.planMode) {
     prompt += `\n\nPlan mode is ACTIVE:
@@ -136,26 +137,26 @@ When user asks to switch models, tell them the slash command to type.`;
 }
 
 export const toolActions: Record<string, string> = {
-  readFile: 'reading...',
-  writeFile: 'writing...',
-  editFile: 'editing...',
-  deleteFile: 'deleting...',
-  copyFile: 'copying...',
-  renameFile: 'renaming...',
-  createFolder: 'creating...',
-  listDirectory: 'listing...',
-  findFiles: 'searching...',
-  searchInFiles: 'searching...',
-  codeOutline: 'analyzing...',
-  semanticSearch: 'searching...',
-  fileInfo: 'checking...',
-  runCommand: 'running...',
-  startProcess: 'starting...',
-  readProcessLogs: 'waiting for output...',
-  killProcess: 'stopping...',
-  memory: 'remembering...',
-  weather: 'checking weather...',
-  fetchUrl: 'fetching...',
-  perplexity_search: 'searching...',
-  parallel_search: 'searching...',
+  readFile: "reading...",
+  writeFile: "writing...",
+  editFile: "editing...",
+  deleteFile: "deleting...",
+  copyFile: "copying...",
+  renameFile: "renaming...",
+  createFolder: "creating...",
+  listDirectory: "listing...",
+  findFiles: "searching...",
+  searchInFiles: "searching...",
+  codeOutline: "analyzing...",
+  semanticSearch: "searching...",
+  fileInfo: "checking...",
+  runCommand: "running...",
+  startProcess: "starting...",
+  readProcessLogs: "waiting for output...",
+  killProcess: "stopping...",
+  memory: "remembering...",
+  weather: "checking weather...",
+  fetchUrl: "fetching...",
+  perplexity_search: "searching...",
+  parallel_search: "searching...",
 };

@@ -4,10 +4,11 @@
  * screen-buffer assertions.
  */
 
-import * as path from 'node:path';
-import { Terminal } from '@xterm/headless';
+import * as path from "node:path";
 
-const CLI = path.resolve(import.meta.dirname, '../../dist/ai.mjs');
+import { Terminal } from "@xterm/headless";
+
+const CLI = path.resolve(import.meta.dirname, "../../dist/ai.mjs");
 
 export interface SpawnedCli {
   /** Write raw bytes to the PTY stdin (keypresses, text, etc.) */
@@ -34,7 +35,7 @@ export interface SpawnedCli {
 
 export function spawnCli(
   args: string[] = [],
-  opts: { cwd?: string; env?: Record<string, string> } = {},
+  opts: { cwd?: string; env?: Record<string, string> } = {}
 ): SpawnedCli {
   const COLS = 120;
   const ROWS = 40;
@@ -45,9 +46,9 @@ export function spawnCli(
     allowProposedApi: true,
   });
 
-  const proc = Bun.spawn([process.execPath, CLI, '--no-color', ...args], {
+  const proc = Bun.spawn([process.execPath, CLI, "--no-color", ...args], {
     cwd: opts.cwd || process.cwd(),
-    env: { ...process.env, ...opts.env, NO_COLOR: '1', TERM: 'dumb' },
+    env: { ...process.env, ...opts.env, NO_COLOR: "1", TERM: "dumb" },
     terminal: {
       cols: COLS,
       rows: ROWS,
@@ -62,17 +63,17 @@ export function spawnCli(
     const lines: string[] = [];
     for (let i = 0; i < buf.length; i++) {
       const line = buf.getLine(i);
-      lines.push(line ? line.translateToString(true) : '');
+      lines.push(line ? line.translateToString(true) : "");
     }
-    while (lines.length > 1 && lines[lines.length - 1] === '') {
+    while (lines.length > 1 && lines.at(-1) === "") {
       lines.pop();
     }
-    return lines.join('\n');
+    return lines.join("\n");
   }
 
   function getLine(n: number): string {
     const line = xterm.buffer.active.getLine(n);
-    return line ? line.translateToString(true) : '';
+    return line ? line.translateToString(true) : "";
   }
 
   function waitFor(pattern: string, timeoutMs = 30_000): Promise<string> {
@@ -93,8 +94,8 @@ export function spawnCli(
         if (Date.now() - start > timeoutMs) {
           reject(
             new Error(
-              `waitFor("${pattern}") timed out after ${timeoutMs}ms.\nScreen:\n${getScreen()}`,
-            ),
+              `waitFor("${pattern}") timed out after ${timeoutMs}ms.\nScreen:\n${getScreen()}`
+            )
           );
           return;
         }

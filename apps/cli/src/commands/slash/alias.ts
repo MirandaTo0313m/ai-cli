@@ -1,5 +1,5 @@
-import { getAliases, removeAlias, setAlias } from '../../config/index.js';
-import type { CommandHandler } from './types.js';
+import { getAliases, removeAlias, setAlias } from "../../config/index.js";
+import type { CommandHandler } from "./types.js";
 
 export const alias: CommandHandler = (_ctx, args) => {
   const aliases = getAliases();
@@ -7,18 +7,18 @@ export const alias: CommandHandler = (_ctx, args) => {
 
   if (!arg) {
     if (Object.keys(aliases).length === 0) {
-      return { output: 'no aliases set\nusage: /alias <shortcut> <command>' };
+      return { output: "no aliases set\nusage: /alias <shortcut> <command>" };
     }
-    const lines = ['aliases:'];
+    const lines = ["aliases:"];
     for (const [k, v] of Object.entries(aliases)) {
       lines.push(`  /${k} → /${v}`);
     }
-    lines.push('\n/alias <shortcut> <command> to add');
-    lines.push('/alias -d <shortcut> to remove');
-    return { output: lines.join('\n') };
+    lines.push("\n/alias <shortcut> <command> to add");
+    lines.push("/alias -d <shortcut> to remove");
+    return { output: lines.join("\n") };
   }
 
-  if (arg.startsWith('-d ')) {
+  if (arg.startsWith("-d ")) {
     const shortcut = arg.slice(3).trim();
     if (removeAlias(shortcut)) {
       return { output: `removed /${shortcut}` };
@@ -28,11 +28,11 @@ export const alias: CommandHandler = (_ctx, args) => {
 
   const parts = arg.split(/\s+/);
   if (parts.length < 2) {
-    return { output: 'usage: /alias <shortcut> <command>' };
+    return { output: "usage: /alias <shortcut> <command>" };
   }
 
-  const shortcut = parts[0].replace(/^\//, '');
-  const command = parts[1].replace(/^\//, '');
+  const shortcut = parts[0].replace(/^\//, "");
+  const command = parts[1].replace(/^\//, "");
 
   setAlias(shortcut, command);
   return { output: `/${shortcut} → /${command}` };

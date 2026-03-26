@@ -1,15 +1,16 @@
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { logError } from '../utils/errorlog.js';
-import { CHATS_DIR, ensureChatsDir } from './paths.js';
+import * as fs from "node:fs";
+import * as path from "node:path";
+
+import { logError } from "../utils/errorlog.js";
+import { CHATS_DIR, ensureChatsDir } from "./paths.js";
 
 export interface ChatMessage {
-  role: 'user' | 'assistant' | 'tool';
+  role: "user" | "assistant" | "tool";
   content: string;
 }
 
 export interface DisplayMessage {
-  type: 'user' | 'assistant' | 'tool' | 'error' | 'info';
+  type: "user" | "assistant" | "tool" | "error" | "info";
   content: string;
 }
 
@@ -38,7 +39,7 @@ export function createChat(model: string): Chat {
   ensureChatsDir();
   const chat: Chat = {
     id: generateId(),
-    title: 'New chat',
+    title: "New chat",
     messages: [],
     model,
     tokens: 0,
@@ -53,11 +54,11 @@ export function createChat(model: string): Chat {
 export function saveChat(chat: Chat): void {
   ensureChatsDir();
   chat.updatedAt = Date.now();
-  if (chat.messages.length > 0 && chat.title === 'New chat') {
-    const firstMsg = chat.messages.find((m) => m.role === 'user');
+  if (chat.messages.length > 0 && chat.title === "New chat") {
+    const firstMsg = chat.messages.find((m) => m.role === "user");
     if (firstMsg) {
       chat.title = firstMsg.content.slice(0, 50).trim();
-      if (firstMsg.content.length > 50) chat.title += '...';
+      if (firstMsg.content.length > 50) {chat.title += "...";}
     }
   }
   fs.writeFileSync(getChatPath(chat.id), JSON.stringify(chat));
@@ -65,10 +66,10 @@ export function saveChat(chat: Chat): void {
 
 export function loadChat(id: string): Chat | null {
   try {
-    const data = fs.readFileSync(getChatPath(id), 'utf-8');
+    const data = fs.readFileSync(getChatPath(id), "utf8");
     return JSON.parse(data) as Chat;
-  } catch (e) {
-    logError(e);
+  } catch (error) {
+    logError(error);
     return null;
   }
 }
@@ -76,19 +77,19 @@ export function loadChat(id: string): Chat | null {
 export function listChats(): Chat[] {
   ensureChatsDir();
   try {
-    const files = fs.readdirSync(CHATS_DIR).filter((f) => f.endsWith('.json'));
+    const files = fs.readdirSync(CHATS_DIR).filter((f) => f.endsWith(".json"));
     const chats: Chat[] = [];
     for (const file of files) {
       try {
-        const data = fs.readFileSync(path.join(CHATS_DIR, file), 'utf-8');
+        const data = fs.readFileSync(path.join(CHATS_DIR, file), "utf8");
         chats.push(JSON.parse(data) as Chat);
-      } catch (e) {
-        logError(e);
+      } catch (error) {
+        logError(error);
       }
     }
-    return chats.sort((a, b) => b.updatedAt - a.updatedAt);
-  } catch (e) {
-    logError(e);
+    return chats.toSorted((a, b) => b.updatedAt - a.updatedAt);
+  } catch (error) {
+    logError(error);
     return [];
   }
 }
@@ -106,7 +107,7 @@ export function deleteAllChats(): number {
   const chats = listChats();
   let deleted = 0;
   for (const chat of chats) {
-    if (deleteChat(chat.id)) deleted++;
+    if (deleteChat(chat.id)) {deleted++;}
   }
   return deleted;
 }
@@ -117,14 +118,14 @@ export function searchChats(query: string): Chat[] {
 
   // Exact ID match takes priority
   const byId = chats.find((c) => c.id === query);
-  if (byId) return [byId];
+  if (byId) {return [byId];}
 
   return chats.filter(
     (c) =>
       c.title.toLowerCase().includes(q) ||
       c.messages.some(
-        (m) => m.role === 'user' && m.content.toLowerCase().includes(q),
-      ),
+        (m) => m.role === "user" && m.content.toLowerCase().includes(q)
+      )
   );
 }
 

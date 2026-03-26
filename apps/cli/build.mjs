@@ -1,19 +1,20 @@
 #!/usr/bin/env node
 
-import { chmodSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { build } from 'esbuild';
+import { chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
-const packageJson = JSON.parse(readFileSync('./package.json', 'utf-8'));
+import { build } from "esbuild";
 
-mkdirSync('dist', { recursive: true });
+const packageJson = JSON.parse(readFileSync("./package.json", "utf8"));
+
+mkdirSync("dist", { recursive: true });
 
 await build({
-  entryPoints: ['src/index.ts'],
+  entryPoints: ["src/index.ts"],
   bundle: true,
-  platform: 'node',
-  target: ['node18', 'node20', 'node22'],
-  format: 'esm',
-  outfile: 'dist/ai.mjs',
+  platform: "node",
+  target: ["node18", "node20", "node22"],
+  format: "esm",
+  outfile: "dist/ai.mjs",
   external: [],
   minify: true,
   sourcemap: false,
@@ -24,12 +25,12 @@ await build({
     __VERSION__: JSON.stringify(packageJson.version),
   },
   alias: {
-    'react-devtools-core': './src/stubs/devtools.js',
+    "react-devtools-core": "./src/stubs/devtools.js",
   },
 });
 
-const content = readFileSync('dist/ai.mjs', 'utf-8');
-writeFileSync('dist/ai.mjs', `#!/usr/bin/env node\n${content}`);
-chmodSync('dist/ai.mjs', 0o755);
+const content = readFileSync("dist/ai.mjs", "utf8");
+writeFileSync("dist/ai.mjs", `#!/usr/bin/env node\n${content}`);
+chmodSync("dist/ai.mjs", 0o755);
 
-console.log('build completed successfully');
+console.log("build completed successfully");

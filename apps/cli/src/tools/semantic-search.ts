@@ -1,56 +1,51 @@
-import { execFileSync } from 'node:child_process';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { tool } from 'ai';
-import { z } from 'zod';
-import { log as debug } from '../utils/debug.js';
-import { cosineSimilarity, embed } from '../utils/embeddings.js';
-import {
-  type Chunk,
-  chunkFile,
-  getProjectHash,
-  getStaleFiles,
-  loadIndex,
-  type ProjectIndex,
-  saveIndex,
-} from '../utils/index-store.js';
+import { execFileSync } from "node:child_process";
+import * as fs from "node:fs";
+import * as path from "node:path";
+
+import { tool } from "ai";
+import { z } from "zod";
+
+import { log as debug } from "../utils/debug.js";
+import { cosineSimilarity, embed } from "../utils/embeddings.js";
+import { chunkFile, getProjectHash, getStaleFiles, loadIndex, saveIndex } from '../utils/index-store.js';
+import type { Chunk, ProjectIndex } from '../utils/index-store.js';
 
 const CODE_EXTENSIONS = new Set([
-  '.ts',
-  '.tsx',
-  '.js',
-  '.jsx',
-  '.mts',
-  '.mjs',
-  '.py',
-  '.go',
-  '.rs',
-  '.java',
-  '.c',
-  '.cpp',
-  '.h',
-  '.hpp',
-  '.cs',
-  '.rb',
-  '.php',
-  '.swift',
-  '.kt',
-  '.scala',
-  '.vue',
-  '.svelte',
-  '.css',
-  '.scss',
-  '.html',
-  '.json',
-  '.yaml',
-  '.yml',
-  '.toml',
-  '.md',
-  '.mdx',
-  '.sql',
-  '.sh',
-  '.bash',
-  '.zsh',
+  ".ts",
+  ".tsx",
+  ".js",
+  ".jsx",
+  ".mts",
+  ".mjs",
+  ".py",
+  ".go",
+  ".rs",
+  ".java",
+  ".c",
+  ".cpp",
+  ".h",
+  ".hpp",
+  ".cs",
+  ".rb",
+  ".php",
+  ".swift",
+  ".kt",
+  ".scala",
+  ".vue",
+  ".svelte",
+  ".css",
+  ".scss",
+  ".html",
+  ".json",
+  ".yaml",
+  ".yml",
+  ".toml",
+  ".md",
+  ".mdx",
+  ".sql",
+  ".sh",
+  ".bash",
+  ".zsh",
 ]);
 
 const MAX_FILE_SIZE = 50000; // skip files larger than 50KB
@@ -59,17 +54,17 @@ const BATCH_SIZE = 50; // embed this many chunks at a time
 function getCodeFiles(cwd: string): string[] {
   // Try git ls-files first
   try {
-    const out = execFileSync('git', ['ls-files'], {
+    const out = execFileSync("git", ["ls-files"], {
       cwd,
-      encoding: 'utf-8',
+      encoding: "utf8",
       timeout: 3000,
-      stdio: ['pipe', 'pipe', 'pipe'],
+      stdio: ["pipe", "pipe", "pipe"],
     });
     return out
       .trim()
-      .split('\n')
+      .split("\n")
       .filter((f) => {
-        if (!f) return false;
+        if (!f) {return false;}
         const ext = path.extname(f).toLowerCase();
         return CODE_EXTENSIONS.has(ext);
       });
@@ -96,19 +91,19 @@ async function buildOrUpdateIndex(cwd: string): Promise<ProjectIndex> {
   const validChunks = existingChunks.filter((c) => allFilesSet.has(c.file));
 
   // Chunk stale files
-  const newChunkData: Array<{
+  const newChunkData: {
     file: string;
     startLine: number;
     endLine: number;
     text: string;
-  }> = [];
+  }[] = [];
 
   for (const f of stale) {
     const fullPath = path.resolve(cwd, f);
     try {
       const stat = fs.statSync(fullPath);
-      if (stat.size > MAX_FILE_SIZE) continue;
-      const content = fs.readFileSync(fullPath, 'utf-8');
+      if (stat.size > MAX_FILE_SIZE) {continue;}
+      const content = fs.readFileSync(fullPath, "utf8");
       newChunkData.push(...chunkFile(f, content));
     } catch {
       // skip unreadable files
@@ -131,8 +126,8 @@ async function buildOrUpdateIndex(cwd: string): Promise<ProjectIndex> {
           embedding: embeddings[j],
         });
       }
-    } catch (e) {
-      debug(`semantic-search: embedding batch failed: ${e}`);
+    } catch (error) {
+      debug(`semantic-search: embedding batch failed: ${error}`);
       // Skip this batch
     }
   }
@@ -163,11 +158,11 @@ export const semanticSearch = tool({
   inputSchema: z.object({
     query: z
       .string()
-      .describe('Natural language description of what you are looking for'),
+      .describe("Natural language description of what you are looking for"),
     topK: z
       .number()
       .optional()
-      .describe('Number of results to return (default 10)'),
+      .describe("Number of results to return (default 10)"),
   }),
   execute: async ({ query, topK = 10 }) => {
     try {
@@ -178,7 +173,7 @@ export const semanticSearch = tool({
       const index = await buildOrUpdateIndex(cwd);
 
       if (index.chunks.length === 0) {
-        return { results: [], message: 'No indexed code found' };
+        return { results: [], message: "No indexed code found" };
       }
 
       // Embed the query
@@ -199,7 +194,7 @@ export const semanticSearch = tool({
       // Deduplicate by file (keep best score per file)
       const seenFiles = new Set<string>();
       const deduplicated = top.filter((r) => {
-        if (seenFiles.has(`${r.file}:${r.startLine}`)) return false;
+        if (seenFiles.has(`${r.file}:${r.startLine}`)) {return false;}
         seenFiles.add(`${r.file}:${r.startLine}`);
         return true;
       });
@@ -214,9 +209,9 @@ export const semanticSearch = tool({
         total: deduplicated.length,
         indexedChunks: index.chunks.length,
       };
-    } catch (e) {
-      debug(`semantic-search error: ${e}`);
-      return { error: `semantic search failed: ${e}` };
+    } catch (error) {
+      debug(`semantic-search error: ${error}`);
+      return { error: `semantic search failed: ${error}` };
     }
   },
 });

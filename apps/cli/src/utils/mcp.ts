@@ -1,24 +1,27 @@
-import { createMCPClient, type MCPClient } from '@ai-sdk/mcp';
-import { Experimental_StdioMCPTransport as StdioMCPTransport } from '@ai-sdk/mcp/mcp-stdio';
-import { getMcpServers, type McpServerConfig } from '../config/mcp.js';
-import { log as debug } from './debug.js';
+import { createMCPClient } from '@ai-sdk/mcp';
+import type { MCPClient } from '@ai-sdk/mcp';
+import { Experimental_StdioMCPTransport as StdioMCPTransport } from "@ai-sdk/mcp/mcp-stdio";
+
+import { getMcpServers } from '../config/mcp.js';
+import type { McpServerConfig } from '../config/mcp.js';
+import { log as debug } from "./debug.js";
 
 interface McpConnection {
   client: MCPClient;
   name: string;
 }
 
-const connections: Map<string, McpConnection> = new Map();
+const connections = new Map<string, McpConnection>();
 let initialized = false;
 
 async function connectServer(
   name: string,
-  config: McpServerConfig,
+  config: McpServerConfig
 ): Promise<McpConnection | null> {
   try {
     let client: MCPClient;
 
-    if (config.type === 'stdio' && config.command) {
+    if (config.type === "stdio" && config.command) {
       const transport = new StdioMCPTransport({
         command: config.command,
         args: config.args || [],
@@ -26,7 +29,7 @@ async function connectServer(
       });
       client = await createMCPClient({ transport });
     } else if (
-      (config.type === 'http' || config.type === 'sse') &&
+      (config.type === "http" || config.type === "sse") &&
       config.url
     ) {
       client = await createMCPClient({
@@ -43,28 +46,28 @@ async function connectServer(
 
     debug(`mcp: connected to ${name}`);
     return { client, name };
-  } catch (e) {
-    debug(`mcp: failed to connect to ${name}: ${e}`);
+  } catch (error) {
+    debug(`mcp: failed to connect to ${name}: ${error}`);
     return null;
   }
 }
 
 export async function initMcp(): Promise<void> {
-  if (initialized) return;
+  if (initialized) {return;}
   initialized = true;
 
   const servers = getMcpServers();
   const names = Object.keys(servers);
 
-  if (names.length === 0) return;
+  if (names.length === 0) {return;}
 
   debug(`mcp: connecting to ${names.length} server(s)`);
 
   await Promise.allSettled(
     names.map(async (name) => {
       const conn = await connectServer(name, servers[name]);
-      if (conn) connections.set(name, conn);
-    }),
+      if (conn) {connections.set(name, conn);}
+    })
   );
 
   debug(`mcp: ${connections.size}/${names.length} connected`);
@@ -83,8 +86,8 @@ export async function getMcpTools(): Promise<Record<string, unknown>> {
         allTools[prefixedName] = tool;
       }
       debug(`mcp: loaded ${Object.keys(tools).length} tools from ${name}`);
-    } catch (e) {
-      debug(`mcp: failed to get tools from ${name}: ${e}`);
+    } catch (error) {
+      debug(`mcp: failed to get tools from ${name}: ${error}`);
     }
   }
 
@@ -96,8 +99,8 @@ export async function closeMcp(): Promise<void> {
     try {
       await conn.client.close();
       debug(`mcp: closed ${name}`);
-    } catch (e) {
-      debug(`mcp: error closing ${name}: ${e}`);
+    } catch (error) {
+      debug(`mcp: error closing ${name}: ${error}`);
     }
   }
   connections.clear();

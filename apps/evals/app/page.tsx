@@ -1,9 +1,10 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+
+import { Button } from "@/components/ui/button";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -11,10 +12,10 @@ export default function DashboardPage() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/runs')
+    fetch("/api/runs")
       .then((res) => res.json())
       .then((runs: { id: string }[]) => {
-        if (cancelled) return;
+        if (cancelled) {return;}
         if (runs.length > 0) {
           router.replace(`/runs/${runs[0].id}`);
         } else {

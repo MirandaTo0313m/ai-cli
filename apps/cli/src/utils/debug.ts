@@ -1,4 +1,4 @@
-import { dim } from './color.js';
+import { dim } from "./color.js";
 
 let enabled = false;
 let start = Date.now();
@@ -14,7 +14,7 @@ export function isEnabled(): boolean {
 }
 
 export function log(msg: string): void {
-  if (!enabled) return;
+  if (!enabled) {return;}
   const elapsed = ((Date.now() - start) / 1000).toFixed(2);
   process.stdout.write(`${dim(`[${elapsed}s] ${msg}`)}\n`);
 }

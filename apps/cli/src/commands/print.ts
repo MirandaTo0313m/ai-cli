@@ -1,23 +1,26 @@
-import type { ModelMessage } from 'ai';
-import { type Chat, saveChat } from '../config/chats.js';
+import type { ModelMessage } from "ai";
+
+import { saveChat } from '../config/chats.js';
+import type { Chat } from '../config/chats.js';
 import {
   getReviewEnabled,
   getReviewMaxIterations,
-} from '../config/settings.js';
-import type { StreamCallbacks, TokenUsage } from '../hooks/chat.js';
-import { streamChat } from '../hooks/chat.js';
-import { withForceMode } from '../tools/confirm.js';
-import { gray } from '../utils/color.js';
-import { formatError } from '../utils/errors.js';
-import { loadImage, type PendingImage } from '../utils/image.js';
-import { getModelCapabilities } from '../utils/models.js';
-import { detectPackageManager } from '../utils/package-manager.js';
-import { reviewLoop } from '../utils/review.js';
-import { createSpinner } from '../utils/spinner.js';
+} from "../config/settings.js";
+import type { StreamCallbacks, TokenUsage } from "../hooks/chat.js";
+import { streamChat } from "../hooks/chat.js";
+import { withForceMode } from "../tools/confirm.js";
+import { gray } from "../utils/color.js";
+import { formatError } from "../utils/errors.js";
+import { loadImage } from '../utils/image.js';
+import type { PendingImage } from '../utils/image.js';
+import { getModelCapabilities } from "../utils/models.js";
+import { detectPackageManager } from "../utils/package-manager.js";
+import { reviewLoop } from "../utils/review.js";
+import { createSpinner } from "../utils/spinner.js";
 import {
   getChangedFilesWithOriginals,
   hasChangedFiles,
-} from '../utils/undo.js';
+} from "../utils/undo.js";
 
 interface PrintOptions {
   message: string;
@@ -37,10 +40,10 @@ interface PrintOptions {
 }
 
 type ChatMessage =
-  | { role: 'assistant'; content: string }
-  | { role: 'tool'; content: string }
-  | { role: 'reasoning'; content: string }
-  | { role: 'error'; content: string };
+  | { role: "assistant"; content: string }
+  | { role: "tool"; content: string }
+  | { role: "reasoning"; content: string }
+  | { role: "error"; content: string };
 
 interface HeadlessResult {
   output: string;
@@ -118,11 +121,11 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
         cost?: number;
         usage?: TokenUsage;
         chatId?: string;
-      },
+      }
     ): never {
       if (json) {
         const result: HeadlessResult = {
-          output: '',
+          output: "",
           model,
           tokens: opts?.tokens ?? 0,
           cost: opts?.cost ?? 0,
@@ -150,7 +153,7 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
     }
 
     if (!message && !resume) {
-      emitErrorAndExit('no message provided');
+      emitErrorAndExit("no message provided");
     }
 
     if (verbose) {
@@ -161,8 +164,8 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
     if (image) {
       try {
         pendingImage = loadImage(image);
-      } catch (e) {
-        emitErrorAndExit(e instanceof Error ? e.message : String(e));
+      } catch (error) {
+        emitErrorAndExit(error instanceof Error ? error.message : String(error));
       }
     }
 
@@ -175,7 +178,7 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
     let cost = 0;
     let steps = 0;
     let toolCalls = 0;
-    let output = '';
+    let output = "";
     let outputEndsWithNewline = false;
     let stuck = false;
     let usage: TokenUsage | null = null;
@@ -184,18 +187,18 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
     const history: ModelMessage[] = [];
     let existingChat: Chat | null = null;
     let initialTokens = 0;
-    let summary = '';
+    let summary = "";
 
     if (resume) {
-      const { loadChat } = await import('../config/chats.js');
+      const { loadChat } = await import("../config/chats.js");
       const loaded = loadChat(resume);
       if (!loaded) {
         emitErrorAndExit(`session ${resume} not found`);
       }
       existingChat = loaded;
-      summary = loaded.summary || '';
+      summary = loaded.summary || "";
       initialTokens = loaded.tokens || 0;
-      const { restoreHistory } = await import('./slash/chat.js');
+      const { restoreHistory } = await import("./slash/chat.js");
       restoreHistory({ chat: loaded }, history);
     }
 
@@ -212,30 +215,30 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
     //   3. Content is identical -- skip (no duplicate writes).
     // In JSON mode we just capture the final value without writing.
     const trackOutput = (content: string) => {
-      if (!content) return;
+      if (!content) {return;}
       if (json) {
         output = content;
       } else if (content !== output) {
         if (output && content.startsWith(output)) {
           const chunk = content.slice(output.length);
           process.stdout.write(chunk);
-          outputEndsWithNewline = chunk.endsWith('\n');
+          outputEndsWithNewline = chunk.endsWith("\n");
         } else if (output && !outputEndsWithNewline) {
           process.stdout.write(`\n${content}`);
-          outputEndsWithNewline = content.endsWith('\n');
+          outputEndsWithNewline = content.endsWith("\n");
         } else {
           process.stdout.write(content);
-          outputEndsWithNewline = content.endsWith('\n');
+          outputEndsWithNewline = content.endsWith("\n");
         }
         output = content;
       }
     };
 
     const logLine = (msg: string) => {
-      if (verbose) process.stderr.write(`${msg}\n`);
+      if (verbose) {process.stderr.write(`${msg}\n`);}
     };
 
-    const emitMsg = (role: ChatMessage['role'], content: string) => {
+    const emitMsg = (role: ChatMessage["role"], content: string) => {
       messages.push({ role, content } as ChatMessage);
       if (json) {
         process.stderr.write(`[msg] ${JSON.stringify({ role, content })}\n`);
@@ -244,14 +247,14 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
 
     const callbacks: StreamCallbacks = {
       onStatus: (status) => {
-        if (spinner && status) spinner.update(status);
-        if (spinner && !status) spinner.stop();
-        if (!spinner && verbose && status) logLine(`[status] ${status}`);
+        if (spinner && status) {spinner.update(status);}
+        if (spinner && !status) {spinner.stop();}
+        if (!spinner && verbose && status) {logLine(`[status] ${status}`);}
       },
       onPending: (text) => {
         if (!text) {
           if (!json) {
-            output = '';
+            output = "";
             outputEndsWithNewline = false;
           }
           return;
@@ -259,35 +262,35 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
         trackOutput(text);
       },
       onMessage: (type, content) => {
-        if (type === 'assistant') {
+        if (type === "assistant") {
           trackOutput(content);
-          if (json) emitMsg('assistant', content);
-        } else if (type === 'info' && content.startsWith('Stopped:')) {
+          if (json) {emitMsg("assistant", content);}
+        } else if (type === "info" && content.startsWith("Stopped:")) {
           stuck = true;
           logLine(content);
-        } else if (type === 'error') {
+        } else if (type === "error") {
           logLine(content);
-          if (json) emitMsg('error', content);
-        } else if (type === 'tool') {
+          if (json) {emitMsg("error", content);}
+        } else if (type === "tool") {
           toolCalls++;
           logLine(content);
-          if (json) emitMsg('tool', content);
+          if (json) {emitMsg("tool", content);}
         }
       },
       onRecord: (type, content) => {
-        if (type === 'assistant') {
+        if (type === "assistant") {
           trackOutput(content);
-          if (json) emitMsg('assistant', content);
+          if (json) {emitMsg("assistant", content);}
         }
       },
       onReasoning: (_text, _durationMs) => {
         if (spinner) {
-          const short = _text.replace(/\s+/g, ' ').trim().slice(-80);
+          const short = _text.replaceAll(/\s+/g, " ").trim().slice(-80);
           spinner.update(short);
         } else if (verbose) {
           logLine(`[reasoning] ${_text}`);
         }
-        if (json) emitMsg('reasoning', _text);
+        if (json) {emitMsg("reasoning", _text);}
       },
       onTokens: (fn) => {
         tokens = fn(tokens);
@@ -308,8 +311,8 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
     let chat: Chat | null = null;
 
     try {
-      if (verbose) logLine('[phase] coding agent');
-      if (spinner) spinner.start('thinking...');
+      if (verbose) {logLine("[phase] coding agent");}
+      if (spinner) {spinner.start("thinking...");}
 
       chat = await streamChat({
         model,
@@ -334,8 +337,8 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
       if (hasChangedFiles() && getReviewEnabled()) {
         const changed = getChangedFilesWithOriginals();
         if (changed.length > 0) {
-          if (verbose) logLine('[phase] review agent');
-          spinner?.start('reviewing...');
+          if (verbose) {logLine("[phase] review agent");}
+          spinner?.start("reviewing...");
           try {
             await reviewLoop({
               model,
@@ -349,10 +352,10 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
                 ? (label) => logLine(`[phase] ${label}`)
                 : undefined,
             });
-          } catch (e) {
-            if ((e as Error).name !== 'AbortError') {
+          } catch (error) {
+            if ((error as Error).name !== "AbortError") {
               if (verbose) {
-                process.stderr.write(`review error: ${formatError(e)}\n`);
+                process.stderr.write(`review error: ${formatError(error)}\n`);
               }
             }
           }
@@ -360,23 +363,23 @@ async function printCommandInner(options: PrintOptions): Promise<void> {
         }
       }
 
-      if (verbose) logLine('[phase] done');
+      if (verbose) {logLine("[phase] done");}
 
       if (!json && output) {
-        process.stdout.write('\n');
+        process.stdout.write("\n");
       }
 
       if (save && chat) {
         saveChat(chat);
       }
     } catch (error) {
-      if (error instanceof ExitError) throw error;
+      if (error instanceof ExitError) {throw error;}
       spinner?.stop();
-      const isTimeout = error instanceof Error && error.name === 'TimeoutError';
+      const isTimeout = error instanceof Error && error.name === "TimeoutError";
       if (isTimeout) {
         process.stderr.write(
-          'warning: timed out during tool execution; workspace may contain partial changes\n' +
-            'hint: run `git diff` to inspect changes, `git checkout .` to revert\n',
+          "warning: timed out during tool execution; workspace may contain partial changes\n" +
+            "hint: run `git diff` to inspect changes, `git checkout .` to revert\n"
         );
       }
       const errorMsg = isTimeout

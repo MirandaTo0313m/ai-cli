@@ -1,16 +1,17 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
-import { gateway } from '@ai-sdk/gateway';
-import { generateObject } from 'ai';
-import { z } from 'zod';
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join, relative } from "node:path";
+
+import { gateway } from "@ai-sdk/gateway";
+import { generateObject } from "ai";
+import { z } from "zod";
 
 const RequirementSchema = z.object({
-  requirement: z.string().describe('What the spec asked for'),
-  implemented: z.boolean().describe('Whether this requirement was implemented'),
+  requirement: z.string().describe("What the spec asked for"),
+  implemented: z.boolean().describe("Whether this requirement was implemented"),
   evidence: z
     .string()
     .describe(
-      'File path and brief explanation of why it is or is not implemented',
+      "File path and brief explanation of why it is or is not implemented"
     ),
 });
 
@@ -21,72 +22,72 @@ const JudgeResultSchema = z.object({
     .min(1)
     .max(10)
     .describe(
-      'Overall spec adherence score from 1 (nothing implemented) to 10 (fully implemented)',
+      "Overall spec adherence score from 1 (nothing implemented) to 10 (fully implemented)"
     ),
   missingRequirements: z
     .array(z.string())
-    .describe('List of requirements from the spec that were NOT implemented'),
+    .describe("List of requirements from the spec that were NOT implemented"),
   verdict: z
-    .enum(['pass', 'fail'])
+    .enum(["pass", "fail"])
     .describe(
-      'pass if the implementation substantially matches the spec, fail otherwise',
+      "pass if the implementation substantially matches the spec, fail otherwise"
     ),
-  reasoning: z.string().describe('Brief explanation of the overall assessment'),
+  reasoning: z.string().describe("Brief explanation of the overall assessment"),
 });
 
 export type JudgeResult = z.infer<typeof JudgeResultSchema>;
 
 const ComparisonRankingSchema = z.object({
-  model: z.string().describe('The model identifier'),
-  rank: z.number().int().min(1).describe('Rank position (1 = best)'),
+  model: z.string().describe("The model identifier"),
+  rank: z.number().int().min(1).describe("Rank position (1 = best)"),
   score: z
     .number()
     .min(1)
     .max(10)
-    .describe('Quality score from 1-10 for this model on this task'),
-  reasoning: z.string().describe('Why this model received this ranking'),
+    .describe("Quality score from 1-10 for this model on this task"),
+  reasoning: z.string().describe("Why this model received this ranking"),
 });
 
 const ComparisonResultSchema = z.object({
   rankings: z.array(ComparisonRankingSchema),
-  winnerModel: z.string().describe('The model that performed best overall'),
+  winnerModel: z.string().describe("The model that performed best overall"),
   reasoning: z
     .string()
-    .describe('Overall comparison explanation — why the winner was chosen'),
+    .describe("Overall comparison explanation — why the winner was chosen"),
 });
 
 export type ComparisonResult = z.infer<typeof ComparisonResultSchema>;
 
 const SKIP_DIRS = new Set([
-  'node_modules',
-  '.git',
-  'dist',
-  '.next',
-  '.turbo',
-  'coverage',
-  '.cache',
+  "node_modules",
+  ".git",
+  "dist",
+  ".next",
+  ".turbo",
+  "coverage",
+  ".cache",
 ]);
 
 const SKIP_FILES = new Set([
-  'package-lock.json',
-  'pnpm-lock.yaml',
-  'yarn.lock',
-  'bun.lockb',
-  'bun.lock',
+  "package-lock.json",
+  "pnpm-lock.yaml",
+  "yarn.lock",
+  "bun.lockb",
+  "bun.lock",
 ]);
 
 const INCLUDE_EXTENSIONS = new Set([
-  '.ts',
-  '.tsx',
-  '.js',
-  '.jsx',
-  '.mjs',
-  '.json',
-  '.css',
-  '.html',
+  ".ts",
+  ".tsx",
+  ".js",
+  ".jsx",
+  ".mjs",
+  ".json",
+  ".css",
+  ".html",
 ]);
 
-const SOURCE_EXTENSIONS = new Set(['.ts', '.tsx']);
+const SOURCE_EXTENSIONS = new Set([".ts", ".tsx"]);
 
 const MAX_TOTAL_CHARS = 150_000;
 
@@ -107,8 +108,8 @@ function collectFiles(dir: string, base?: string): CollectedFile[] {
   }
 
   for (const entry of entries) {
-    if (SKIP_DIRS.has(entry)) continue;
-    if (SKIP_FILES.has(entry)) continue;
+    if (SKIP_DIRS.has(entry)) {continue;}
+    if (SKIP_FILES.has(entry)) {continue;}
     const full = join(dir, entry);
 
     let stat: ReturnType<typeof statSync> | undefined;
@@ -121,10 +122,10 @@ function collectFiles(dir: string, base?: string): CollectedFile[] {
     if (stat.isDirectory()) {
       files.push(...collectFiles(full, root));
     } else if (stat.isFile()) {
-      const ext = entry.slice(entry.lastIndexOf('.'));
-      if (!INCLUDE_EXTENSIONS.has(ext)) continue;
+      const ext = entry.slice(entry.lastIndexOf("."));
+      if (!INCLUDE_EXTENSIONS.has(ext)) {continue;}
       try {
-        const content = readFileSync(full, 'utf-8');
+        const content = readFileSync(full, "utf8");
         files.push({ path: relative(root, full), content });
       } catch {
         // skip unreadable files
@@ -139,11 +140,11 @@ function buildFileContext(workDir: string): string {
   const files = collectFiles(workDir);
 
   files.sort((a, b) => {
-    const aExt = a.path.slice(a.path.lastIndexOf('.'));
-    const bExt = b.path.slice(b.path.lastIndexOf('.'));
+    const aExt = a.path.slice(a.path.lastIndexOf("."));
+    const bExt = b.path.slice(b.path.lastIndexOf("."));
     const aSource = SOURCE_EXTENSIONS.has(aExt) ? 0 : 1;
     const bSource = SOURCE_EXTENSIONS.has(bExt) ? 0 : 1;
-    if (aSource !== bSource) return aSource - bSource;
+    if (aSource !== bSource) {return aSource - bSource;}
     return a.path.localeCompare(b.path);
   });
 
@@ -154,7 +155,7 @@ function buildFileContext(workDir: string): string {
     const entry = `--- ${file.path} ---\n${file.content}\n`;
     if (totalChars + entry.length > MAX_TOTAL_CHARS) {
       parts.push(
-        `\n[... truncated — ${files.length - parts.length} more files not shown ...]\n`,
+        `\n[... truncated — ${files.length - parts.length} more files not shown ...]\n`
       );
       break;
     }
@@ -162,7 +163,7 @@ function buildFileContext(workDir: string): string {
     totalChars += entry.length;
   }
 
-  return parts.join('\n');
+  return parts.join("\n");
 }
 
 export interface JudgeOptions {
@@ -175,19 +176,19 @@ export interface JudgeOptions {
 export async function judgeSpecAdherence(
   spec: string,
   workDir: string,
-  opts: JudgeOptions = {},
+  opts: JudgeOptions = {}
 ): Promise<JudgeResult> {
-  const { judgeModel = 'anthropic/claude-opus-4.6' } = opts;
+  const { judgeModel = "anthropic/claude-opus-4.6" } = opts;
 
   const fileContext = buildFileContext(workDir);
 
   const outputSection = opts.agentOutput
     ? `\n## Agent Output\n\n${opts.agentOutput}\n`
-    : '';
+    : "";
 
   const logsSection = opts.agentLogs
     ? `\n## Agent Logs\n\n${opts.agentLogs.slice(-20000)}\n`
-    : '';
+    : "";
 
   const prompt = `You are a strict technical reviewer. Your job is to evaluate whether an AI agent successfully completed a given task.
 
@@ -197,7 +198,7 @@ ${spec}
 
 ## Generated Source Code
 
-${fileContext || '(no files were created)'}
+${fileContext || "(no files were created)"}
 ${outputSection}${logsSection}
 ## Instructions
 
@@ -231,15 +232,15 @@ export interface ComparisonEntry {
 export async function judgeComparison(
   spec: string,
   entries: ComparisonEntry[],
-  judgeModel = 'anthropic/claude-opus-4.6',
+  judgeModel = "anthropic/claude-opus-4.6"
 ): Promise<ComparisonResult> {
   const modelsSection = entries
     .map((e, i) => {
       const score =
-        e.judgeScore != null ? `${e.judgeScore}/10 (${e.judgeVerdict})` : 'N/A';
-      return `### Model ${i + 1}: ${e.model}\n\nIndividual judge score: ${score}\n\n#### Output\n\n${e.output || '(no output)'}\n`;
+        e.judgeScore !== null ? `${e.judgeScore}/10 (${e.judgeVerdict})` : "N/A";
+      return `### Model ${i + 1}: ${e.model}\n\nIndividual judge score: ${score}\n\n#### Output\n\n${e.output || "(no output)"}\n`;
     })
-    .join('\n---\n\n');
+    .join("\n---\n\n");
 
   const prompt = `You are a strict technical reviewer comparing how multiple AI models performed on the same task. Your job is to rank them from best to worst and pick a winner.
 

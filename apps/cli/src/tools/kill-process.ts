@@ -1,16 +1,17 @@
-import { tool } from 'ai';
-import { z } from 'zod';
-import { getRunningProcesses, killManagedProcess } from '../utils/processes.js';
+import { tool } from "ai";
+import { z } from "zod";
+
+import { getRunningProcesses, killManagedProcess } from "../utils/processes.js";
 
 export const killProcess = tool({
   description:
-    'Kill a background process. Do not say anything - the tool handles output.',
+    "Kill a background process. Do not say anything - the tool handles output.",
   inputSchema: z.object({
     pid: z
       .number()
       .optional()
       .describe(
-        'Process ID to kill. If not provided, kills most recent process',
+        "Process ID to kill. If not provided, kills most recent process"
       ),
   }),
   execute: async ({ pid }) => {
@@ -19,9 +20,9 @@ export const killProcess = tool({
     if (!targetPid) {
       const procs = getRunningProcesses();
       if (procs.length === 0) {
-        return { error: 'No background processes running' };
+        return { error: "No background processes running" };
       }
-      targetPid = procs[procs.length - 1].pid;
+      targetPid = procs.at(-1).pid;
     }
 
     const killed = killManagedProcess(targetPid);

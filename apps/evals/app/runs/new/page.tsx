@@ -1,21 +1,22 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Separator } from '@/components/ui/separator';
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 import {
   EVAL_REGISTRY,
   EVAL_MODELS,
   EVAL_CATEGORIES,
-} from '@/lib/evals/registry';
+} from "@/lib/evals/registry";
 
 export default function NewRunPage() {
   const router = useRouter();
   const [selectedModels, setSelectedModels] = useState<Set<string>>(
-    new Set([EVAL_MODELS[0]]),
+    new Set([EVAL_MODELS[0]])
   );
   const [selectedEvals, setSelectedEvals] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
@@ -23,8 +24,8 @@ export default function NewRunPage() {
   const toggleModel = (model: string) => {
     setSelectedModels((prev) => {
       const next = new Set(prev);
-      if (next.has(model)) next.delete(model);
-      else next.add(model);
+      if (next.has(model)) {next.delete(model);}
+      else {next.add(model);}
       return next;
     });
   };
@@ -32,8 +33,8 @@ export default function NewRunPage() {
   const toggleEval = (slug: string) => {
     setSelectedEvals((prev) => {
       const next = new Set(prev);
-      if (next.has(slug)) next.delete(slug);
-      else next.add(slug);
+      if (next.has(slug)) {next.delete(slug);}
+      else {next.add(slug);}
       return next;
     });
   };
@@ -60,20 +61,20 @@ export default function NewRunPage() {
     setSelectedEvals((prev) => {
       const next = new Set(prev);
       for (const e of catEvals) {
-        if (allSelected) next.delete(e.slug);
-        else next.add(e.slug);
+        if (allSelected) {next.delete(e.slug);}
+        else {next.add(e.slug);}
       }
       return next;
     });
   };
 
   const handleSubmit = async () => {
-    if (selectedModels.size === 0 || selectedEvals.size === 0) return;
+    if (selectedModels.size === 0 || selectedEvals.size === 0) {return;}
     setSubmitting(true);
 
-    const res = await fetch('/api/runs', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch("/api/runs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         models: [...selectedModels],
         evals: [...selectedEvals],
@@ -100,8 +101,8 @@ export default function NewRunPage() {
             </h1>
             <p className="text-xs text-muted-foreground">
               {taskCount > 0
-                ? `${taskCount} task${taskCount === 1 ? '' : 's'} (${selectedEvals.size} eval${selectedEvals.size === 1 ? '' : 's'} × ${selectedModels.size} model${selectedModels.size === 1 ? '' : 's'})`
-                : 'Select at least one model and one eval'}
+                ? `${taskCount} task${taskCount === 1 ? "" : "s"} (${selectedEvals.size} eval${selectedEvals.size === 1 ? "" : "s"} × ${selectedModels.size} model${selectedModels.size === 1 ? "" : "s"})`
+                : "Select at least one model and one eval"}
             </p>
           </div>
           <Button
@@ -109,7 +110,7 @@ export default function NewRunPage() {
             disabled={taskCount === 0 || submitting}
             size="sm"
           >
-            {submitting ? 'Starting...' : 'Start Run'}
+            {submitting ? "Starting..." : "Start Run"}
           </Button>
         </div>
       </div>
@@ -125,8 +126,8 @@ export default function NewRunPage() {
                 className="text-xs text-muted-foreground hover:text-foreground"
               >
                 {selectedModels.size === EVAL_MODELS.length
-                  ? 'Deselect all'
-                  : 'Select all'}
+                  ? "Deselect all"
+                  : "Select all"}
               </button>
             </div>
           </CardHeader>
@@ -156,18 +157,18 @@ export default function NewRunPage() {
                 className="text-xs text-muted-foreground hover:text-foreground"
               >
                 {selectedEvals.size === EVAL_REGISTRY.length
-                  ? 'Deselect all'
-                  : 'Select all'}
+                  ? "Deselect all"
+                  : "Select all"}
               </button>
             </div>
           </CardHeader>
           <CardContent>
             {EVAL_CATEGORIES.map((cat, idx) => {
               const catEvals = EVAL_REGISTRY.filter(
-                (e) => e.category === cat.value,
+                (e) => e.category === cat.value
               );
               const allChecked = catEvals.every((e) =>
-                selectedEvals.has(e.slug),
+                selectedEvals.has(e.slug)
               );
               return (
                 <div key={cat.value}>
@@ -181,7 +182,7 @@ export default function NewRunPage() {
                       onClick={() => toggleCategory(cat.value)}
                       className="text-xs text-muted-foreground hover:text-foreground"
                     >
-                      {allChecked ? 'Deselect' : 'Select all'}
+                      {allChecked ? "Deselect" : "Select all"}
                     </button>
                   </div>
                   <div className="space-y-3">

@@ -1,18 +1,20 @@
-import * as fs from 'node:fs';
-import { tool } from 'ai';
-import { z } from 'zod';
-import { mask } from '../utils/mask.js';
-import { resolveAnyPath, safePath } from '../utils/safe-path.js';
-import { confirm } from './confirm.js';
+import * as fs from "node:fs";
+
+import { tool } from "ai";
+import { z } from "zod";
+
+import { mask } from "../utils/mask.js";
+import { resolveAnyPath, safePath } from "../utils/safe-path.js";
+import { confirm } from "./confirm.js";
 
 const LARGE_FILE_THRESHOLD = 500;
 const TRUNCATION_LIMIT = 10000;
 
 export const readFile = tool({
   description:
-    'Read the contents of a file. When showing file contents to the user, use plain text with code blocks only for actual code.',
+    "Read the contents of a file. When showing file contents to the user, use plain text with code blocks only for actual code.",
   inputSchema: z.object({
-    filePath: z.string().describe('Absolute or relative path to the file'),
+    filePath: z.string().describe("Absolute or relative path to the file"),
   }),
   execute: async ({ filePath }) => {
     try {
@@ -20,10 +22,10 @@ export const readFile = tool({
       if (!fullPath) {
         const allowed = await confirm(
           `read file outside project: ${filePath}`,
-          { tool: 'readFile', noAlways: true },
+          { tool: "readFile", noAlways: true }
         );
         if (!allowed)
-          return { error: 'User denied access to file outside project.' };
+          {return { error: "User denied access to file outside project." };}
         fullPath = resolveAnyPath(filePath);
       }
 
@@ -33,8 +35,8 @@ export const readFile = tool({
         };
       }
 
-      const content = mask(fs.readFileSync(fullPath, 'utf-8'));
-      const lines = content.split('\n').length;
+      const content = mask(fs.readFileSync(fullPath, "utf8"));
+      const lines = content.split("\n").length;
       if (lines > LARGE_FILE_THRESHOLD) {
         return {
           content: content.slice(0, TRUNCATION_LIMIT),

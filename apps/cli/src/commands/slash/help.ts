@@ -1,5 +1,5 @@
-import { getAliases } from '../../config/index.js';
-import type { CommandHandler } from './types.js';
+import { getAliases } from "../../config/index.js";
+import type { CommandHandler } from "./types.js";
 
 const details: Record<string, string> = {
   chat: `/chat
@@ -130,43 +130,43 @@ export const help: CommandHandler = (_ctx, args) => {
   }
 
   const lines = [
-    'commands:',
-    '  /chat        chats',
-    '  /clear       clear chat',
-    '  /copy        copy response',
-    '  /rollback    undo changes',
-    '  /compress    compress history',
-    '  /usage       stats',
-    '  /processes   processes',
-    '  /memory      memories',
-    '  /skills      skills',
-    '  /rules       rules',
-    '  /mcp         mcp servers',
-    '  /settings    settings',
-    '  /permissions permissions rules',
-    '  /plan        plan before executing',
-    '  /review      review loop',
-    '  /model       model',
-    '  /alias       shortcuts',
-    '  /info        info',
-    '  exit         quit',
-    '',
-    'headless mode:',
-    '  ai -p        run with full agent, output to stdout',
-    '',
-    'ctrl+v to paste images',
-    '/help <cmd> for details',
+    "commands:",
+    "  /chat        chats",
+    "  /clear       clear chat",
+    "  /copy        copy response",
+    "  /rollback    undo changes",
+    "  /compress    compress history",
+    "  /usage       stats",
+    "  /processes   processes",
+    "  /memory      memories",
+    "  /skills      skills",
+    "  /rules       rules",
+    "  /mcp         mcp servers",
+    "  /settings    settings",
+    "  /permissions permissions rules",
+    "  /plan        plan before executing",
+    "  /review      review loop",
+    "  /model       model",
+    "  /alias       shortcuts",
+    "  /info        info",
+    "  exit         quit",
+    "",
+    "headless mode:",
+    "  ai -p        run with full agent, output to stdout",
+    "",
+    "ctrl+v to paste images",
+    "/help <cmd> for details",
   ];
 
   const aliases = getAliases();
   const keys = Object.keys(aliases);
   if (keys.length > 0) {
-    lines.push('');
-    lines.push('aliases:');
+    lines.push("");
+    lines.push("aliases:");
     for (const k of keys) {
       lines.push(`  /${k} → /${aliases[k]}`);
     }
   }
 
-  return { output: lines.join('\n') };
+  return { output: lines.join("\n") };
 };

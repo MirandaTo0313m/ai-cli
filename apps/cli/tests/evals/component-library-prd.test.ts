@@ -11,38 +11,30 @@
  *
  *   AI_GATEWAY_API_KEY=<key> bun test tests/evals/component-library-prd.test.ts
  */
-import { afterEach, describe, expect, test } from 'bun:test';
-import { existsSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-import {
-  assertAnyFileContains,
-  assertCommandSucceeds,
-  assertFileContains,
-  assertFileExists,
-  assertStepCount,
-  cleanupWorkDir,
-  createWorkDir,
-  type EvalResult,
-  runEval,
-} from './eval-helpers';
-import { assertSpecAdherence } from './eval-judge';
+import { afterEach, describe, expect, test } from "bun:test";
+import { existsSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+
+import { assertAnyFileContains, assertCommandSucceeds, assertFileContains, assertFileExists, assertStepCount, cleanupWorkDir, createWorkDir, runEval } from './eval-helpers';
+import type { EvalResult } from './eval-helpers';
+import { assertSpecAdherence } from "./eval-judge";
 
 const TIMEOUT = 2_400_000; // 40 min bun:test timeout
 const CLI_TIMEOUT = 1800; // 30 min CLI timeout
 
 const COMPONENT_NAMES = [
-  'Button',
-  'Input',
-  'Select',
-  'Checkbox',
-  'Toggle',
-  'Badge',
-  'Avatar',
-  'Card',
-  'Modal',
-  'Toast',
-  'Tooltip',
-  'Tabs',
+  "Button",
+  "Input",
+  "Select",
+  "Checkbox",
+  "Toggle",
+  "Badge",
+  "Avatar",
+  "Card",
+  "Modal",
+  "Toast",
+  "Tooltip",
+  "Tabs",
 ];
 
 const PRD = `You are building a React component library called "ui-lib". Follow this PRD exactly.
@@ -207,9 +199,9 @@ function countTestFiles(dir: string): { found: string[]; missing: string[] } {
   return { found, missing };
 }
 
-describe('eval: large PRD — component library', () => {
+describe("eval: large PRD — component library", () => {
   test(
-    'builds 12-component React library from a detailed PRD',
+    "builds 12-component React library from a detailed PRD",
     async () => {
       workDir = createWorkDir();
 
@@ -218,16 +210,16 @@ describe('eval: large PRD — component library', () => {
         timeoutSec: CLI_TIMEOUT,
         setup: async (dir: string) => {
           writeFileSync(
-            join(dir, 'package.json'),
+            join(dir, "package.json"),
             JSON.stringify(
               {
-                name: 'ui-lib',
-                version: '1.0.0',
-                type: 'module',
+                name: "ui-lib",
+                version: "1.0.0",
+                type: "module",
               },
               null,
-              2,
-            ),
+              2
+            )
           );
         },
       });
@@ -235,44 +227,44 @@ describe('eval: large PRD — component library', () => {
       // -- Component files: at least 10 of 12 ---------------------
       const components = countComponentFiles(workDir);
       console.log(
-        `\n  components found: ${components.found.length}/12 — ${components.found.join(', ')}`,
+        `\n  components found: ${components.found.length}/12 — ${components.found.join(", ")}`
       );
       if (components.missing.length > 0) {
-        console.log(`  components missing: ${components.missing.join(', ')}`);
+        console.log(`  components missing: ${components.missing.join(", ")}`);
       }
       expect(components.found.length).toBeGreaterThanOrEqual(10);
 
       // -- Test files: at least 10 of 12 --------------------------
       const tests = countTestFiles(workDir);
       console.log(
-        `  test files found: ${tests.found.length}/12 — ${tests.found.join(', ')}`,
+        `  test files found: ${tests.found.length}/12 — ${tests.found.join(", ")}`
       );
       if (tests.missing.length > 0) {
-        console.log(`  test files missing: ${tests.missing.join(', ')}`);
+        console.log(`  test files missing: ${tests.missing.join(", ")}`);
       }
       expect(tests.found.length).toBeGreaterThanOrEqual(10);
 
       // -- Props interfaces exist ---------------------------------
-      assertAnyFileContains(workDir, ['tsx', 'ts'], 'Props');
+      assertAnyFileContains(workDir, ["tsx", "ts"], "Props");
 
       // -- Accessibility: aria attributes present ------------------
-      assertAnyFileContains(workDir, ['tsx'], 'aria-');
+      assertAnyFileContains(workDir, ["tsx"], "aria-");
 
       // -- Barrel export ------------------------------------------
-      const barrelCandidates = ['src/index.ts', 'src/index.tsx'];
+      const barrelCandidates = ["src/index.ts", "src/index.tsx"];
       const dir = workDir as string;
       const hasBarrel = barrelCandidates.some((p) => existsSync(join(dir, p)));
       expect(hasBarrel).toBe(true);
 
       // -- TypeScript config --------------------------------------
-      assertFileExists(workDir, 'tsconfig.json');
+      assertFileExists(workDir, "tsconfig.json");
 
       // -- Dependencies in package.json ---------------------------
-      assertFileContains(workDir, 'package.json', 'react');
-      assertFileContains(workDir, 'package.json', 'vitest');
+      assertFileContains(workDir, "package.json", "react");
+      assertFileContains(workDir, "package.json", "vitest");
 
       // -- Tests pass ---------------------------------------------
-      assertCommandSucceeds(workDir, 'npx vitest run', 180_000);
+      assertCommandSucceeds(workDir, "npx vitest run", 180_000);
 
       // -- Agent completed successfully ---------------------------
       expect(result.json.exitCode).toBe(0);
@@ -284,9 +276,9 @@ describe('eval: large PRD — component library', () => {
       await assertSpecAdherence(PRD, workDir);
 
       console.log(
-        `\n  tokens: ${result.json.tokens} | cost: $${result.json.cost.toFixed(4)} | steps: ${result.json.steps} | toolCalls: ${result.json.toolCalls} | exit: ${result.json.exitCode}`,
+        `\n  tokens: ${result.json.tokens} | cost: $${result.json.cost.toFixed(4)} | steps: ${result.json.steps} | toolCalls: ${result.json.toolCalls} | exit: ${result.json.exitCode}`
       );
     },
-    TIMEOUT,
+    TIMEOUT
   );
 });

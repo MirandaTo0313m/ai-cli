@@ -1,4 +1,4 @@
-import { RunDetail } from '@/components/run-detail';
+import { RunDetail } from "@/components/run-detail";
 
 export default async function EvalDetailPage({
   params,

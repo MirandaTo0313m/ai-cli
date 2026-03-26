@@ -1,0 +1,59 @@
+---
+title: Interactive Mode
+description: Full terminal UI with streaming, tools, and slash commands.
+order: 4
+---
+
+## Start
+
+```bash
+ai
+```
+
+This opens a persistent session with streaming responses, tool use, and slash commands.
+
+## Features
+
+<Cards>
+  <Card title="Streaming output" description="Real-time text with syntax highlighting as the AI responds." />
+  <Card title="Tool confirmations" description="Review and approve file changes before they happen." />
+  <Card title="Slash commands" description="27 commands for chat management, model switching, and more." />
+  <Card title="Image paste" description="Paste images from clipboard with ctrl+v for visual analysis." />
+  <Card title="Auto-save" description="Chat history saved automatically for later resumption." />
+  <Card title="Context compression" description="Automatic summarization when approaching token limits." />
+</Cards>
+
+## Model switching
+
+Switch models mid-session with fuzzy matching:
+
+```bash
+/model gpt-5
+/model sonnet
+/model gemini
+```
+
+<Callout type="tip">
+  Fuzzy matching means you never need the full model name. Type the shortest unique prefix and ai-cli finds the right model.
+</Callout>
+
+## Plan mode
+
+Toggle read-only plan mode where the AI analyzes but doesn't modify files:
+
+```bash
+/plan
+```
+
+<Callout type="info">
+  Plan mode is useful for understanding a codebase before making changes. The AI will describe what it would do without actually doing it.
+</Callout>
+
+## Keyboard shortcuts
+
+| Key | Action |
+| --- | --- |
+| <Kbd>Enter</Kbd> | Send message |
+| <Kbd>Ctrl+V</Kbd> | Paste image from clipboard |
+| <Kbd>Ctrl+C</Kbd> | Cancel current response |
+| <Kbd>/</Kbd> | Open slash command menu |

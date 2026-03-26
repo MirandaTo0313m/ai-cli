@@ -8,25 +8,27 @@
  * The judge evaluates whether the agent's output actually implements
  * what the spec/PRD asked for — not just whether files exist.
  */
-import { expect } from 'bun:test';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
-import { gateway } from '@ai-sdk/gateway';
-import { generateObject } from 'ai';
-import { z } from 'zod';
-import { EVAL_MODEL } from './eval-helpers';
+import { expect } from "bun:test";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join, relative } from "node:path";
+
+import { gateway } from "@ai-sdk/gateway";
+import { generateObject } from "ai";
+import { z } from "zod";
+
+import { EVAL_MODEL } from "./eval-helpers";
 
 // ---------------------------------------------------------------------------
 // Schema
 // ---------------------------------------------------------------------------
 
 const RequirementSchema = z.object({
-  requirement: z.string().describe('What the spec asked for'),
-  implemented: z.boolean().describe('Whether this requirement was implemented'),
+  requirement: z.string().describe("What the spec asked for"),
+  implemented: z.boolean().describe("Whether this requirement was implemented"),
   evidence: z
     .string()
     .describe(
-      'File path and brief explanation of why it is or is not implemented',
+      "File path and brief explanation of why it is or is not implemented"
     ),
 });
 
@@ -37,17 +39,17 @@ const JudgeResultSchema = z.object({
     .min(1)
     .max(10)
     .describe(
-      'Overall spec adherence score from 1 (nothing implemented) to 10 (fully implemented)',
+      "Overall spec adherence score from 1 (nothing implemented) to 10 (fully implemented)"
     ),
   missingRequirements: z
     .array(z.string())
-    .describe('List of requirements from the spec that were NOT implemented'),
+    .describe("List of requirements from the spec that were NOT implemented"),
   verdict: z
-    .enum(['pass', 'fail'])
+    .enum(["pass", "fail"])
     .describe(
-      'pass if the implementation substantially matches the spec, fail otherwise',
+      "pass if the implementation substantially matches the spec, fail otherwise"
     ),
-  reasoning: z.string().describe('Brief explanation of the overall assessment'),
+  reasoning: z.string().describe("Brief explanation of the overall assessment"),
 });
 
 export type JudgeResult = z.infer<typeof JudgeResultSchema>;
@@ -57,35 +59,35 @@ export type JudgeResult = z.infer<typeof JudgeResultSchema>;
 // ---------------------------------------------------------------------------
 
 const SKIP_DIRS = new Set([
-  'node_modules',
-  '.git',
-  'dist',
-  '.next',
-  '.turbo',
-  'coverage',
-  '.cache',
+  "node_modules",
+  ".git",
+  "dist",
+  ".next",
+  ".turbo",
+  "coverage",
+  ".cache",
 ]);
 
 const SKIP_FILES = new Set([
-  'package-lock.json',
-  'pnpm-lock.yaml',
-  'yarn.lock',
-  'bun.lockb',
-  'bun.lock',
+  "package-lock.json",
+  "pnpm-lock.yaml",
+  "yarn.lock",
+  "bun.lockb",
+  "bun.lock",
 ]);
 
 const INCLUDE_EXTENSIONS = new Set([
-  '.ts',
-  '.tsx',
-  '.js',
-  '.jsx',
-  '.mjs',
-  '.json',
-  '.css',
-  '.html',
+  ".ts",
+  ".tsx",
+  ".js",
+  ".jsx",
+  ".mjs",
+  ".json",
+  ".css",
+  ".html",
 ]);
 
-const SOURCE_EXTENSIONS = new Set(['.ts', '.tsx']);
+const SOURCE_EXTENSIONS = new Set([".ts", ".tsx"]);
 
 const MAX_TOTAL_CHARS = 150_000;
 
@@ -106,8 +108,8 @@ function collectFiles(dir: string, base?: string): CollectedFile[] {
   }
 
   for (const entry of entries) {
-    if (SKIP_DIRS.has(entry)) continue;
-    if (SKIP_FILES.has(entry)) continue;
+    if (SKIP_DIRS.has(entry)) {continue;}
+    if (SKIP_FILES.has(entry)) {continue;}
     const full = join(dir, entry);
 
     let stat: ReturnType<typeof statSync> | undefined;
@@ -120,10 +122,10 @@ function collectFiles(dir: string, base?: string): CollectedFile[] {
     if (stat.isDirectory()) {
       files.push(...collectFiles(full, root));
     } else if (stat.isFile()) {
-      const ext = entry.slice(entry.lastIndexOf('.'));
-      if (!INCLUDE_EXTENSIONS.has(ext)) continue;
+      const ext = entry.slice(entry.lastIndexOf("."));
+      if (!INCLUDE_EXTENSIONS.has(ext)) {continue;}
       try {
-        const content = readFileSync(full, 'utf-8');
+        const content = readFileSync(full, "utf8");
         files.push({ path: relative(root, full), content });
       } catch {
         // skip unreadable files
@@ -138,11 +140,11 @@ function buildFileContext(workDir: string): string {
   const files = collectFiles(workDir);
 
   files.sort((a, b) => {
-    const aExt = a.path.slice(a.path.lastIndexOf('.'));
-    const bExt = b.path.slice(b.path.lastIndexOf('.'));
+    const aExt = a.path.slice(a.path.lastIndexOf("."));
+    const bExt = b.path.slice(b.path.lastIndexOf("."));
     const aSource = SOURCE_EXTENSIONS.has(aExt) ? 0 : 1;
     const bSource = SOURCE_EXTENSIONS.has(bExt) ? 0 : 1;
-    if (aSource !== bSource) return aSource - bSource;
+    if (aSource !== bSource) {return aSource - bSource;}
     return a.path.localeCompare(b.path);
   });
 
@@ -153,7 +155,7 @@ function buildFileContext(workDir: string): string {
     const entry = `--- ${file.path} ---\n${file.content}\n`;
     if (totalChars + entry.length > MAX_TOTAL_CHARS) {
       parts.push(
-        `\n[... truncated — ${files.length - parts.length} more files not shown ...]\n`,
+        `\n[... truncated — ${files.length - parts.length} more files not shown ...]\n`
       );
       break;
     }
@@ -161,7 +163,7 @@ function buildFileContext(workDir: string): string {
     totalChars += entry.length;
   }
 
-  return parts.join('\n');
+  return parts.join("\n");
 }
 
 // ---------------------------------------------------------------------------
@@ -178,7 +180,7 @@ export interface JudgeOptions {
 export async function judgeSpecAdherence(
   spec: string,
   workDir: string,
-  opts: JudgeOptions = {},
+  opts: JudgeOptions = {}
 ): Promise<JudgeResult> {
   const { judgeModel = EVAL_MODEL } = opts;
 
@@ -223,12 +225,12 @@ Be strict: trivial stubs, empty test files, or placeholder implementations shoul
 export async function assertSpecAdherence(
   spec: string,
   workDir: string,
-  opts: JudgeOptions = {},
+  opts: JudgeOptions = {}
 ): Promise<JudgeResult> {
   const { minScore = 7 } = opts;
 
-  console.log('\n--- judge: spec adherence ---');
-  console.log('  calling judge model...');
+  console.log("\n--- judge: spec adherence ---");
+  console.log("  calling judge model...");
 
   const result = await judgeSpecAdherence(spec, workDir, opts);
 
@@ -238,10 +240,10 @@ export async function assertSpecAdherence(
 
   const implemented = result.requirements.filter((r) => r.implemented).length;
   const notImplemented = result.requirements.filter(
-    (r) => !r.implemented,
+    (r) => !r.implemented
   ).length;
   console.log(
-    `  implemented: ${implemented}, not implemented: ${notImplemented}`,
+    `  implemented: ${implemented}, not implemented: ${notImplemented}`
   );
 
   if (result.missingRequirements.length > 0) {
@@ -252,10 +254,10 @@ export async function assertSpecAdherence(
   }
 
   console.log(`  reasoning: ${result.reasoning}`);
-  console.log('--- end judge ---\n');
+  console.log("--- end judge ---\n");
 
   expect(result.adherenceScore).toBeGreaterThanOrEqual(minScore);
-  expect(result.verdict).toBe('pass');
+  expect(result.verdict).toBe("pass");
 
   return result;
 }

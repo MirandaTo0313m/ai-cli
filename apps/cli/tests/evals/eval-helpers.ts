@@ -12,18 +12,18 @@
  *
  *   bun test tests/evals/
  */
-import { expect } from 'bun:test';
-import { execSync, spawn as nodeSpawn } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, unlinkSync } from 'node:fs';
-import { homedir, tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { expect } from "bun:test";
+import { execSync, spawn as nodeSpawn } from "node:child_process";
+import { existsSync, mkdtempSync, readFileSync, unlinkSync } from "node:fs";
+import { homedir, tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 
-const CLI = resolve(import.meta.dirname, '../../dist/ai.mjs');
-const CLI_ROOT = resolve(import.meta.dirname, '../..');
+const CLI = resolve(import.meta.dirname, "../../dist/ai.mjs");
+const CLI_ROOT = resolve(import.meta.dirname, "../..");
 
 export const EVAL_MODELS = [
-  'anthropic/claude-sonnet-4.6',
-  'xai/grok-4.1-fast-reasoning',
+  "anthropic/claude-sonnet-4.6",
+  "xai/grok-4.1-fast-reasoning",
 ] as const;
 
 export const EVAL_MODEL: string = process.env.EVAL_MODEL ?? EVAL_MODELS[0];
@@ -33,16 +33,16 @@ export const EVAL_MODEL: string = process.env.EVAL_MODEL ?? EVAL_MODELS[0];
 // ---------------------------------------------------------------------------
 
 function loadDotEnv(): Record<string, string> {
-  const candidates = [join(CLI_ROOT, '.env'), join(CLI_ROOT, '.env.local')];
+  const candidates = [join(CLI_ROOT, ".env"), join(CLI_ROOT, ".env.local")];
   const vars: Record<string, string> = {};
   for (const file of candidates) {
-    if (!existsSync(file)) continue;
-    const lines = readFileSync(file, 'utf-8').split('\n');
+    if (!existsSync(file)) {continue;}
+    const lines = readFileSync(file, "utf8").split("\n");
     for (const line of lines) {
       const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith('#')) continue;
-      const eq = trimmed.indexOf('=');
-      if (eq < 0) continue;
+      if (!trimmed || trimmed.startsWith("#")) {continue;}
+      const eq = trimmed.indexOf("=");
+      if (eq === -1) {continue;}
       const key = trimmed.slice(0, eq).trim();
       let value = trimmed.slice(eq + 1).trim();
       if (
@@ -60,7 +60,7 @@ function loadDotEnv(): Record<string, string> {
 const dotEnvVars = loadDotEnv();
 
 for (const [k, v] of Object.entries(dotEnvVars)) {
-  if (!process.env[k]) process.env[k] = v;
+  if (!process.env[k]) {process.env[k] = v;}
 }
 
 // ---------------------------------------------------------------------------
@@ -113,7 +113,7 @@ export interface EvalOptions {
 // Temp directory management
 // ---------------------------------------------------------------------------
 
-const PREFIX = 'ai-cli-eval-';
+const PREFIX = "ai-cli-eval-";
 
 export function createWorkDir(): string {
   return mkdtempSync(join(tmpdir(), PREFIX));
@@ -122,7 +122,7 @@ export function createWorkDir(): string {
 /** Background cleanup — spawns `rm -rf` without blocking the test runner. */
 export function cleanupWorkDir(dir: string): void {
   try {
-    nodeSpawn('rm', ['-rf', dir], { stdio: 'ignore', detached: true }).unref();
+    nodeSpawn("rm", ["-rf", dir], { stdio: "ignore", detached: true }).unref();
   } catch {}
 }
 
@@ -132,7 +132,7 @@ export function cleanupWorkDir(dir: string): void {
 
 export async function runEval(
   prompt: string,
-  opts: EvalOptions = {},
+  opts: EvalOptions = {}
 ): Promise<EvalResult> {
   const {
     timeoutSec = 300,
@@ -150,16 +150,16 @@ export async function runEval(
 
   const args = [
     CLI,
-    '-p',
-    '--force',
-    '--json',
-    '--verbose',
-    ...(save ? [] : ['--no-save']),
-    '--timeout',
+    "-p",
+    "--force",
+    "--json",
+    "--verbose",
+    ...(save ? [] : ["--no-save"]),
+    "--timeout",
     String(timeoutSec),
-    '--model',
+    "--model",
     model,
-    ...(resume ? ['--resume', resume] : []),
+    ...(resume ? ["--resume", resume] : []),
     prompt,
   ];
 
@@ -168,20 +168,20 @@ export async function runEval(
     stderr: string;
     code: number | null;
   }>((resolvePromise) => {
-    const env = { ...dotEnvVars, ...process.env, NO_COLOR: '1' };
+    const env = { ...dotEnvVars, ...process.env, NO_COLOR: "1" };
     const child = nodeSpawn(process.execPath, args, {
       env,
       cwd: workDir,
-      stdio: ['pipe', 'pipe', 'pipe'],
+      stdio: ["pipe", "pipe", "pipe"],
     });
 
     const stdoutBufs: Buffer[] = [];
     const stderrBufs: Buffer[] = [];
-    child.stdout.on('data', (d) => stdoutBufs.push(d));
-    child.stderr.on('data', (d) => stderrBufs.push(d));
+    child.stdout.on("data", (d) => stdoutBufs.push(d));
+    child.stderr.on("data", (d) => stderrBufs.push(d));
     child.stdin.end();
 
-    child.on('close', (code) => {
+    child.on("close", (code) => {
       resolvePromise({
         stdout: Buffer.concat(stdoutBufs).toString(),
         stderr: Buffer.concat(stderrBufs).toString(),
@@ -195,15 +195,15 @@ export async function runEval(
     json = JSON.parse(result.stdout.trim());
   } catch {
     throw new Error(
-      `Failed to parse CLI JSON output.\nstdout: ${result.stdout}\nstderr: ${result.stderr}`,
+      `Failed to parse CLI JSON output.\nstdout: ${result.stdout}\nstderr: ${result.stderr}`
     );
   }
 
   // Diagnostic output so failures are debuggable
-  console.log('\n--- eval result ---');
+  console.log("\n--- eval result ---");
   console.log(`  exit code: ${result.code}`);
   console.log(`  json.exitCode: ${json.exitCode}`);
-  console.log(`  json.error: ${json.error ?? '(none)'}`);
+  console.log(`  json.error: ${json.error ?? "(none)"}`);
   console.log(`  json.tokens: ${json.tokens}`);
   console.log(`  json.steps: ${json.steps}`);
   console.log(`  json.toolCalls: ${json.toolCalls}`);
@@ -214,11 +214,11 @@ export async function runEval(
   if (result.stderr) {
     console.log(`  stderr (last 500): ${result.stderr.slice(-500)}`);
   }
-  console.log('--- end eval result ---\n');
+  console.log("--- end eval result ---\n");
 
   if (json.error) {
     throw new Error(
-      `CLI returned error: ${json.error}\nstderr: ${result.stderr.slice(-1000)}`,
+      `CLI returned error: ${json.error}\nstderr: ${result.stderr.slice(-1000)}`
     );
   }
 
@@ -248,12 +248,12 @@ export function assertNoFile(dir: string, relativePath: string): void {
 export function assertFileContains(
   dir: string,
   relativePath: string,
-  pattern: string | RegExp,
+  pattern: string | RegExp
 ): void {
   const full = join(dir, relativePath);
   expect(existsSync(full)).toBe(true);
-  const content = readFileSync(full, 'utf-8');
-  if (typeof pattern === 'string') {
+  const content = readFileSync(full, "utf8");
+  if (typeof pattern === "string") {
     expect(content).toContain(pattern);
   } else {
     expect(content).toMatch(pattern);
@@ -267,17 +267,17 @@ export function assertFileContains(
 export function assertAnyFileContains(
   dir: string,
   extensions: string[],
-  pattern: string,
+  pattern: string
 ): void {
-  const extArgs = extensions.map((e) => `--include=*.${e}`).join(' ');
+  const extArgs = extensions.map((e) => `--include=*.${e}`).join(" ");
   try {
     execSync(`grep -r ${extArgs} -l ${JSON.stringify(pattern)} .`, {
       cwd: dir,
-      stdio: 'pipe',
+      stdio: "pipe",
     });
   } catch {
     throw new Error(
-      `No file with extensions [${extensions.join(', ')}] in ${dir} contains "${pattern}"`,
+      `No file with extensions [${extensions.join(", ")}] in ${dir} contains "${pattern}"`
     );
   }
 }
@@ -285,16 +285,16 @@ export function assertAnyFileContains(
 export function assertCommandSucceeds(
   dir: string,
   cmd: string,
-  timeoutMs = 120_000,
+  timeoutMs = 120_000
 ): void {
   try {
-    execSync(cmd, { cwd: dir, stdio: 'pipe', timeout: timeoutMs });
-  } catch (e) {
+    execSync(cmd, { cwd: dir, stdio: "pipe", timeout: timeoutMs });
+  } catch (error) {
     const stderr =
-      e && typeof e === 'object' && 'stderr' in e
-        ? (e as { stderr: Buffer }).stderr?.toString()
-        : '';
-    throw new Error(`Command failed in ${dir}: ${cmd}\n${stderr}`);
+      error && typeof error === "object" && "stderr" in error
+        ? (error as { stderr: Buffer }).stderr?.toString()
+        : "";
+    throw new Error(`Command failed in ${dir}: ${cmd}\n${stderr}`, { cause: e });
   }
 }
 
@@ -304,17 +304,17 @@ export function assertCommandSucceeds(
  */
 export function assertAnyFileExists(
   dir: string,
-  relativePaths: string[],
+  relativePaths: string[]
 ): void {
   const found = relativePaths.some((p) => existsSync(join(dir, p)));
   if (!found) {
-    throw new Error(`None of [${relativePaths.join(', ')}] exist in ${dir}`);
+    throw new Error(`None of [${relativePaths.join(", ")}] exist in ${dir}`);
   }
 }
 
 export function assertStepCount(
   result: EvalResult,
-  bounds: { min?: number; max?: number },
+  bounds: { min?: number; max?: number }
 ): void {
   const { steps } = result.json;
   if (bounds.min !== undefined) {
@@ -342,17 +342,17 @@ export interface MultiTurnEvalResult {
 
 export function cleanupChat(chatId: string): void {
   try {
-    const chatPath = join(homedir(), '.ai-cli', 'chats', `${chatId}.json`);
+    const chatPath = join(homedir(), ".ai-cli", "chats", `${chatId}.json`);
     unlinkSync(chatPath);
   } catch {}
 }
 
 export async function runMultiTurnEval(
   messages: MultiTurnMessage[],
-  opts: EvalOptions = {},
+  opts: EvalOptions = {}
 ): Promise<MultiTurnEvalResult> {
   if (messages.length === 0) {
-    throw new Error('runMultiTurnEval requires at least one message');
+    throw new Error("runMultiTurnEval requires at least one message");
   }
 
   const workDir = opts.cwd ?? createWorkDir();
@@ -380,7 +380,7 @@ export async function runMultiTurnEval(
 
     if (!chatId && i < messages.length - 1) {
       throw new Error(
-        `${turnLabel} no chatId returned — cannot resume for next turn`,
+        `${turnLabel} no chatId returned — cannot resume for next turn`
       );
     }
 

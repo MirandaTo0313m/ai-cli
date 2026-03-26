@@ -1,0 +1,54 @@
+---
+title: Models
+description: Switch between 50+ models with fuzzy matching.
+order: 7
+---
+
+## Default model
+
+The default model is `anthropic/claude-sonnet-4.5`. Change it in [configuration](/docs/configuration) or per-request with `-m`.
+
+## Switching models
+
+Use the `-m` flag with any model name or shorthand:
+
+```bash
+ai -m gpt-5 "hello"
+ai -m sonnet "hello"
+ai -m gemini "hello"
+ai -m llama "hello"
+```
+
+<Callout type="tip">
+  Fuzzy matching resolves partial names to the closest available model. Type `son` and it matches `anthropic/claude-sonnet-4.5`.
+</Callout>
+
+## Listing models
+
+```bash
+ai -l
+```
+
+Shows all available models from the gateway.
+
+## In-session switching
+
+Use the `/model` slash command in interactive mode:
+
+```bash
+/model gpt-5
+/model sonnet
+```
+
+## Providers
+
+All models are accessed through [Vercel AI Gateway](https://vercel.com/docs/ai-gateway), which supports:
+
+<Cards>
+  <Card title="Anthropic" description="Claude Opus, Sonnet, Haiku" />
+  <Card title="OpenAI" description="GPT-5, GPT-4.1, o3, o4-mini" />
+  <Card title="Google" description="Gemini 2.5 Pro, Flash" />
+  <Card title="Meta" description="Llama 4 Scout, Maverick" />
+  <Card title="Mistral" description="Mistral Large, Medium" />
+  <Card title="xAI" description="Grok 3, Grok 3 Mini" />
+</Cards>

@@ -1,8 +1,8 @@
-import { setApiKey } from '../config/index.js';
-import { dim } from '../utils/color.js';
-import { GATEWAY_URL } from '../utils/models.js';
+import { setApiKey } from "../config/index.js";
+import { dim } from "../utils/color.js";
+import { GATEWAY_URL } from "../utils/models.js";
 
-const frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+const frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 
 async function validateApiKey(apiKey: string): Promise<boolean> {
   try {
@@ -22,83 +22,87 @@ function readPassword(prompt: string): Promise<string> {
     const stdin = process.stdin;
     stdin.setRawMode?.(true);
     stdin.resume();
-    stdin.setEncoding('utf8');
+    stdin.setEncoding("utf8");
 
-    let password = '';
+    let password = "";
 
     const onData = (char: string) => {
       switch (char) {
-        case '\n':
-        case '\r':
-        case '\u0004':
+        case "\n":
+        case "\r":
+        case "\u0004": {
           stdin.setRawMode?.(false);
           stdin.pause();
-          stdin.removeListener('data', onData);
-          process.stdout.write('\n');
+          stdin.removeListener("data", onData);
+          process.stdout.write("\n");
           resolve(password);
           break;
-        case '\u0003':
+        }
+        case "\u0003": {
           stdin.setRawMode?.(false);
-          process.stdout.write('\n');
+          process.stdout.write("\n");
           process.exit(1);
           break;
-        case '\u007f':
-        case '\u0008':
+        }
+        case "\u007F":
+        case "\u0008": {
           if (password.length > 0) {
             password = password.slice(0, -1);
-            process.stdout.write('\b \b');
+            process.stdout.write("\b \b");
           }
           break;
-        default:
+        }
+        default: {
           for (const c of char) {
-            if (c >= ' ' && c <= '~') {
+            if (c >= " " && c <= "~") {
               password += c;
-              process.stdout.write('*');
+              process.stdout.write("*");
             }
           }
           break;
+        }
       }
     };
 
-    stdin.on('data', onData);
+    stdin.on("data", onData);
   });
 }
 
 const KEY_URL =
-  'https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai%2Fapi-keys&title=Go+to+AI+Gateway';
+  "https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai%2Fapi-keys&title=Go+to+AI+Gateway";
 
 const hyperlink = (text: string, url: string) =>
-  `\x1b]8;;${url}\x1b\\${text}\x1b]8;;\x1b\\`;
+  `\x1B]8;;${url}\x1B\\${text}\x1B]8;;\x1B\\`;
 
 export async function initCommand(): Promise<void> {
-  console.log(dim(`get key → ${hyperlink('vercel.com/ai', KEY_URL)}\n`));
-  const apiKey = await readPassword(dim('› api key: '));
+  console.log(dim(`get key → ${hyperlink("vercel.com/ai", KEY_URL)}\n`));
+  const apiKey = await readPassword(dim("› api key: "));
 
   if (!apiKey) {
-    console.error('key required');
+    console.error("key required");
     process.exit(1);
   }
 
   let frame = 0;
   const interval = setInterval(() => {
-    process.stdout.write(`\r${dim(frames[frame])} ${dim('validating...')}`);
+    process.stdout.write(`\r${dim(frames[frame])} ${dim("validating...")}`);
     frame = (frame + 1) % frames.length;
   }, 80);
 
   const isValid = await validateApiKey(apiKey);
   clearInterval(interval);
-  process.stdout.write('\r\x1b[K');
+  process.stdout.write("\r\x1B[K");
 
   if (!isValid) {
-    console.error('invalid key');
+    console.error("invalid key");
     process.exit(1);
   }
 
   try {
     setApiKey(apiKey);
-    console.log(dim('saved'));
+    console.log(dim("saved"));
   } catch {
-    console.error('failed to save');
+    console.error("failed to save");
     process.exit(1);
   }
 }

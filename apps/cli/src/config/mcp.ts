@@ -1,9 +1,10 @@
-import * as fs from 'node:fs';
-import { logError } from '../utils/errorlog.js';
-import { ensureBaseDir, MCP_FILE } from './paths.js';
+import * as fs from "node:fs";
+
+import { logError } from "../utils/errorlog.js";
+import { ensureBaseDir, MCP_FILE } from "./paths.js";
 
 export interface McpServerConfig {
-  type: 'stdio' | 'http' | 'sse';
+  type: "stdio" | "http" | "sse";
   command?: string;
   args?: string[];
   env?: Record<string, string>;
@@ -16,25 +17,25 @@ export interface McpConfig {
 }
 
 function expandEnvVars(value: string): string {
-  return value.replace(/\$\{([^}]+)\}/g, (_, expr) => {
-    const [name, fallback] = expr.split(':-');
-    return process.env[name] || fallback || '';
+  return value.replaceAll(/\$\{([^}]+)\}/g, (_, expr) => {
+    const [name, fallback] = expr.split(":-");
+    return process.env[name] || fallback || "";
   });
 }
 
 function expandConfig(config: McpServerConfig): McpServerConfig {
   const expanded = { ...config };
-  if (expanded.url) expanded.url = expandEnvVars(expanded.url);
-  if (expanded.command) expanded.command = expandEnvVars(expanded.command);
-  if (expanded.args) expanded.args = expanded.args.map(expandEnvVars);
+  if (expanded.url) {expanded.url = expandEnvVars(expanded.url);}
+  if (expanded.command) {expanded.command = expandEnvVars(expanded.command);}
+  if (expanded.args) {expanded.args = expanded.args.map(expandEnvVars);}
   if (expanded.env) {
     expanded.env = Object.fromEntries(
-      Object.entries(expanded.env).map(([k, v]) => [k, expandEnvVars(v)]),
+      Object.entries(expanded.env).map(([k, v]) => [k, expandEnvVars(v)])
     );
   }
   if (expanded.headers) {
     expanded.headers = Object.fromEntries(
-      Object.entries(expanded.headers).map(([k, v]) => [k, expandEnvVars(v)]),
+      Object.entries(expanded.headers).map(([k, v]) => [k, expandEnvVars(v)])
     );
   }
   return expanded;
@@ -44,18 +45,18 @@ export function getMcpConfig(): McpConfig {
   ensureBaseDir();
   try {
     if (fs.existsSync(MCP_FILE)) {
-      const data = JSON.parse(fs.readFileSync(MCP_FILE, 'utf-8'));
+      const data = JSON.parse(fs.readFileSync(MCP_FILE, "utf8"));
       return { servers: data.servers || {} };
     }
-  } catch (e) {
-    logError(e);
+  } catch (error) {
+    logError(error);
   }
   return { servers: {} };
 }
 
 export function saveMcpConfig(config: McpConfig): void {
   ensureBaseDir();
-  fs.writeFileSync(MCP_FILE, JSON.stringify(config, null, 2), 'utf-8');
+  fs.writeFileSync(MCP_FILE, JSON.stringify(config, null, 2), "utf8");
 }
 
 export function getMcpServers(): Record<string, McpServerConfig> {

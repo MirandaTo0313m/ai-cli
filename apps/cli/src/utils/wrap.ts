@@ -2,14 +2,14 @@ export function wrap(text: string, width?: number): string {
   const cols = (width || process.stdout.columns || 80) - 1;
   const lines: string[] = [];
 
-  for (const line of text.split('\n')) {
+  for (const line of text.split("\n")) {
     if (line.length <= cols) {
       lines.push(line);
       continue;
     }
 
-    const words = line.split(' ');
-    let current = '';
+    const words = line.split(" ");
+    let current = "";
 
     for (const word of words) {
       if (current.length === 0) {
@@ -27,27 +27,27 @@ export function wrap(text: string, width?: number): string {
     }
   }
 
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 export function createStreamWrap() {
   let col = 0;
-  let buffer = '';
+  let buffer = "";
 
   return {
     write(text: string): string {
       const cols = (process.stdout.columns || 80) - 1;
-      let output = '';
+      let output = "";
 
       for (const char of text) {
-        if (char === '\n') {
+        if (char === "\n") {
           output += `${buffer}\n`;
-          buffer = '';
+          buffer = "";
           col = 0;
           continue;
         }
 
-        if (char === ' ') {
+        if (char === " ") {
           const wordLen = buffer.length;
           if (col + wordLen > cols && col > 0) {
             output += `\n${buffer} `;
@@ -56,7 +56,7 @@ export function createStreamWrap() {
             output += `${buffer} `;
             col += wordLen + 1;
           }
-          buffer = '';
+          buffer = "";
         } else {
           buffer += char;
         }
@@ -67,14 +67,14 @@ export function createStreamWrap() {
 
     flush(): string {
       const out = buffer;
-      buffer = '';
+      buffer = "";
       col = 0;
       return out;
     },
 
     reset() {
       col = 0;
-      buffer = '';
+      buffer = "";
     },
   };
 }

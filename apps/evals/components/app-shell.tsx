@@ -1,13 +1,11 @@
-'use client';
+"use client";
 
-import { useEffect, useState, useCallback } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
-import { ChevronRight, ChevronDown, Trash2, RotateCw } from 'lucide-react';
-import {
-  ResizablePanelGroup,
-  ResizablePanel,
-  ResizableHandle,
-} from '@/components/ui/resizable';
+import { ChevronRight, ChevronDown, Trash2, RotateCw } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState, useCallback } from "react";
+
+import type { Task, RunData, Comparison } from "@/components/run-detail";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -15,10 +13,13 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { getEvalBySlug } from '@/lib/evals/registry';
-import type { Task, RunData, Comparison } from '@/components/run-detail';
+} from "@/components/ui/dialog";
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from "@/components/ui/resizable";
+import { getEvalBySlug } from "@/lib/evals/registry";
 
 interface RunSummary {
   id: string;
@@ -31,13 +32,13 @@ interface RunSummary {
 }
 
 function formatDuration(ms: number | null): string {
-  if (ms == null) return '—';
-  if (ms < 60_000) return `${(ms / 1000).toFixed(0)}s`;
+  if (ms === null) {return "—";}
+  if (ms < 60_000) {return `${(ms / 1000).toFixed(0)}s`;}
   return `${(ms / 60_000).toFixed(1)}m`;
 }
 
 function taskDuration(task: Task, now: number): number | null {
-  if (task.durationMs != null) return task.durationMs;
+  if (task.durationMs !== null) {return task.durationMs;}
   if (task.startedAt && !task.completedAt) {
     return now - new Date(task.startedAt).getTime();
   }
@@ -53,27 +54,27 @@ function formatRunDate(date: string): string {
     d.getDate() === now.getDate();
 
   if (isToday) {
-    return d.toLocaleString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
+    return d.toLocaleString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
       hour12: true,
     });
   }
-  return d.toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
+  return d.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
     hour12: true,
   });
 }
 
 function aggregateStatus(tasks: Task[]): string {
-  if (tasks.some((t) => t.status === 'running')) return 'running';
-  if (tasks.some((t) => t.status === 'pending')) return 'pending';
-  if (tasks.every((t) => t.status === 'completed')) return 'completed';
-  if (tasks.some((t) => t.status === 'failed')) return 'failed';
-  return 'completed';
+  if (tasks.some((t) => t.status === "running")) {return "running";}
+  if (tasks.some((t) => t.status === "pending")) {return "pending";}
+  if (tasks.every((t) => t.status === "completed")) {return "completed";}
+  if (tasks.some((t) => t.status === "failed")) {return "failed";}
+  return "completed";
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -84,7 +85,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const evalMatch = pathname.match(/^\/runs\/[^/]+\/evals\/([^/]+)/);
   const compareMatch = pathname.match(/^\/runs\/[^/]+\/compare\/([^/]+)/);
   const selectedRunId =
-    runMatch?.[1] === 'new' ? null : (runMatch?.[1] ?? null);
+    runMatch?.[1] === "new" ? null : (runMatch?.[1] ?? null);
   const selectedTaskId = evalMatch?.[1] ?? null;
   const selectedComparisonId = compareMatch?.[1] ?? null;
 
@@ -98,9 +99,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const hasActive = runs.some(
-      (r) => r.status === 'running' || r.status === 'pending',
+      (r) => r.status === "running" || r.status === "pending"
     );
-    if (!hasActive) return;
+    if (!hasActive) {return;}
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, [runs]);
@@ -108,8 +109,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      const res = await fetch('/api/runs');
-      if (res.ok && !cancelled) setRuns(await res.json());
+      const res = await fetch("/api/runs");
+      if (res.ok && !cancelled) {setRuns(await res.json());}
     };
     load();
     const interval = setInterval(load, 5000);
@@ -120,7 +121,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!selectedRunId) return;
+    if (!selectedRunId) {return;}
     let cancelled = false;
     const load = async () => {
       const res = await fetch(`/api/runs/${selectedRunId}`);
@@ -148,7 +149,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     next.add(`run-${selectedRunId}`);
     if (selectedTaskId) {
       const task = runData.tasks.find((t) => t.id === selectedTaskId);
-      if (task) next.add(`model-${selectedRunId}-${task.model}`);
+      if (task) {next.add(`model-${selectedRunId}-${task.model}`);}
     }
     setExpanded(next);
   }
@@ -169,22 +170,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           next.delete(key);
         } else {
           next.add(key);
-          if (key.startsWith('run-')) {
+          if (key.startsWith("run-")) {
             const expandedRunId = key.slice(4);
-            if (!runDataMap[expandedRunId]) fetchRunData(expandedRunId);
+            if (!runDataMap[expandedRunId]) {fetchRunData(expandedRunId);}
           }
         }
         return next;
       });
     },
-    [runDataMap, fetchRunData],
+    [runDataMap, fetchRunData]
   );
 
   const handleSelectTask = useCallback(
     (taskRunId: string, taskId: string) => {
       router.push(`/runs/${taskRunId}/evals/${taskId}`, { scroll: false });
     },
-    [router],
+    [router]
   );
 
   const handleSelectComparison = useCallback(
@@ -193,14 +194,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         scroll: false,
       });
     },
-    [router],
+    [router]
   );
 
   const [deleteRunId, setDeleteRunId] = useState<string | null>(null);
 
   const handleDeleteRun = useCallback(async () => {
-    if (!deleteRunId) return;
-    await fetch(`/api/runs/${deleteRunId}`, { method: 'DELETE' });
+    if (!deleteRunId) {return;}
+    await fetch(`/api/runs/${deleteRunId}`, { method: "DELETE" });
     setRuns((prev) => prev.filter((r) => r.id !== deleteRunId));
     setRunDataMap((prev) => {
       const next = { ...prev };
@@ -208,7 +209,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       return next;
     });
     if (selectedRunId === deleteRunId) {
-      router.push('/', { scroll: false });
+      router.push("/", { scroll: false });
     }
     setDeleteRunId(null);
   }, [deleteRunId, selectedRunId, router]);
@@ -216,16 +217,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [rerunRunId, setRerunRunId] = useState<string | null>(null);
 
   const handleRerunRun = useCallback(async () => {
-    if (!rerunRunId) return;
+    if (!rerunRunId) {return;}
     const data = runDataMap[rerunRunId];
-    if (!data) return;
+    if (!data) {return;}
 
     const models = [...new Set(data.tasks.map((t) => t.model))];
     const evals = [...new Set(data.tasks.map((t) => t.evalName))];
 
-    const res = await fetch('/api/runs', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch("/api/runs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ models, evals }),
     });
 
@@ -233,8 +234,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       const { id } = await res.json();
       setRerunRunId(null);
       router.push(`/runs/${id}`, { scroll: false });
-      const runsRes = await fetch('/api/runs');
-      if (runsRes.ok) setRuns(await runsRes.json());
+      const runsRes = await fetch("/api/runs");
+      if (runsRes.ok) {setRuns(await runsRes.json());}
     }
   }, [rerunRunId, runDataMap, router]);
 
@@ -271,7 +272,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Dialog
         open={deleteRunId !== null}
         onOpenChange={(open) => {
-          if (!open) setDeleteRunId(null);
+          if (!open) {setDeleteRunId(null);}
         }}
       >
         <DialogContent>
@@ -296,7 +297,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Dialog
         open={rerunRunId !== null}
         onOpenChange={(open) => {
-          if (!open) setRerunRunId(null);
+          if (!open) {setRerunRunId(null);}
         }}
       >
         <DialogContent>
@@ -357,8 +358,8 @@ function TaskTree({
         if (runData) {
           for (const task of runData.tasks) {
             const list = modelGroups.get(task.model);
-            if (list) list.push(task);
-            else modelGroups.set(task.model, [task]);
+            if (list) {list.push(task);}
+            else {modelGroups.set(task.model, [task]);}
           }
         }
 
@@ -366,7 +367,7 @@ function TaskTree({
           <div key={run.id} className="border-b last:border-b-0">
             <div
               className={`group flex items-center gap-2 px-3 py-2 transition-colors hover:bg-accent/50 ${
-                isActiveRun && !selectedTaskId ? 'bg-accent/30' : ''
+                isActiveRun && !selectedTaskId ? "bg-accent/30" : ""
               }`}
             >
               <button
@@ -380,7 +381,7 @@ function TaskTree({
                   <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                 )}
                 <span
-                  className={`text-xs font-medium ${run.status === 'running' || run.status === 'pending' ? 'shimmer-text' : ''}`}
+                  className={`text-xs font-medium ${run.status === "running" || run.status === "pending" ? "shimmer-text" : ""}`}
                 >
                   {formatRunDate(run.createdAt)}
                 </span>
@@ -409,12 +410,12 @@ function TaskTree({
 
             {isRunExpanded &&
               runData &&
-              Array.from(modelGroups.entries())
-                .sort(([a], [b]) => a.localeCompare(b))
+              [...modelGroups.entries()]
+                .toSorted(([a], [b]) => a.localeCompare(b))
                 .map(([model, tasks]) => {
                   const modelKey = `model-${run.id}-${model}`;
                   const isModelExpanded = expanded.has(modelKey);
-                  const shortModel = model.split('/').pop() ?? model;
+                  const shortModel = model.split("/").pop() ?? model;
                   const modelStatus = aggregateStatus(tasks);
 
                   return (
@@ -430,7 +431,7 @@ function TaskTree({
                           <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground" />
                         )}
                         <span
-                          className={`text-xs font-mono truncate ${modelStatus === 'running' || modelStatus === 'pending' ? 'shimmer-text' : ''}`}
+                          className={`text-xs font-mono truncate ${modelStatus === "running" || modelStatus === "pending" ? "shimmer-text" : ""}`}
                         >
                           {shortModel}
                         </span>
@@ -438,7 +439,7 @@ function TaskTree({
 
                       {isModelExpanded &&
                         [...tasks]
-                          .sort((a, b) => a.evalName.localeCompare(b.evalName))
+                          .toSorted((a, b) => a.evalName.localeCompare(b.evalName))
                           .map((task) => {
                             const def = getEvalBySlug(task.evalName);
                             const isSelected =
@@ -451,16 +452,16 @@ function TaskTree({
                                 type="button"
                                 onClick={() => onSelect(run.id, task.id)}
                                 className={`w-full text-left pl-14 pr-3 py-1.5 transition-colors cursor-pointer hover:bg-accent/50 flex items-center gap-2 ${
-                                  isSelected ? 'bg-accent' : ''
+                                  isSelected ? "bg-accent" : ""
                                 }`}
                               >
                                 <span
-                                  className={`text-xs truncate ${task.status === 'running' || task.status === 'pending' ? 'shimmer-text' : ''}`}
+                                  className={`text-xs truncate ${task.status === "running" || task.status === "pending" ? "shimmer-text" : ""}`}
                                 >
                                   {def?.name ?? task.evalName}
                                 </span>
                                 <span
-                                  className={`ml-auto text-[10px] font-mono shrink-0 ${task.status === 'running' || task.status === 'pending' ? 'shimmer-text' : 'text-muted-foreground'}`}
+                                  className={`ml-auto text-[10px] font-mono shrink-0 ${task.status === "running" || task.status === "pending" ? "shimmer-text" : "text-muted-foreground"}`}
                                 >
                                   {formatDuration(taskDuration(task, now))}
                                 </span>
@@ -523,8 +524,8 @@ function ComparisonTreeNode({
   const nodeKey = `compare-${runId}`;
   const isExpanded = expanded.has(nodeKey);
 
-  const sorted = [...comparisons].sort((a, b) =>
-    a.evalName.localeCompare(b.evalName),
+  const sorted = [...comparisons].toSorted((a, b) =>
+    a.evalName.localeCompare(b.evalName)
   );
 
   return (
@@ -551,7 +552,7 @@ function ComparisonTreeNode({
           const isSelected =
             selectedComparisonId === comp.id && selectedRunId === runId;
           const winnerShort =
-            comp.winnerModel.split('/').pop() ?? comp.winnerModel;
+            comp.winnerModel.split("/").pop() ?? comp.winnerModel;
 
           return (
             <button
@@ -559,7 +560,7 @@ function ComparisonTreeNode({
               type="button"
               onClick={() => onSelectComparison(runId, comp.id)}
               className={`w-full text-left pl-14 pr-3 py-1.5 transition-colors cursor-pointer hover:bg-accent/50 flex items-center gap-2 ${
-                isSelected ? 'bg-accent' : ''
+                isSelected ? "bg-accent" : ""
               }`}
             >
               <span className="text-xs truncate">

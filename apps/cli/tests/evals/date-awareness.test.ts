@@ -9,13 +9,10 @@
  *
  *   AI_GATEWAY_API_KEY=<key> bun test tests/evals/date-awareness.test.ts
  */
-import { afterEach, describe, expect, test } from 'bun:test';
-import {
-  cleanupWorkDir,
-  createWorkDir,
-  type EvalResult,
-  runEval,
-} from './eval-helpers';
+import { afterEach, describe, expect, test } from "bun:test";
+
+import { cleanupWorkDir, createWorkDir, runEval } from './eval-helpers';
+import type { EvalResult } from './eval-helpers';
 
 const TIMEOUT = 120_000;
 const CLI_TIMEOUT = 60;
@@ -29,18 +26,18 @@ afterEach(() => {
   }
 });
 
-describe('eval: date awareness', () => {
+describe("eval: date awareness", () => {
   test(
-    'agent responds with the correct current date',
+    "agent responds with the correct current date",
     async () => {
       workDir = createWorkDir();
 
       const now = new Date();
       const year = String(now.getFullYear());
-      const monthLong = now.toLocaleString('en-US', { month: 'long' });
-      const monthShort = now.toLocaleString('en-US', { month: 'short' });
+      const monthLong = now.toLocaleString("en-US", { month: "long" });
+      const monthShort = now.toLocaleString("en-US", { month: "short" });
       const monthNum = String(now.getMonth() + 1);
-      const monthPadded = monthNum.padStart(2, '0');
+      const monthPadded = monthNum.padStart(2, "0");
       const day = String(now.getDate());
 
       const result: EvalResult = await runEval(
@@ -48,7 +45,7 @@ describe('eval: date awareness', () => {
         {
           cwd: workDir,
           timeoutSec: CLI_TIMEOUT,
-        },
+        }
       );
 
       const output = result.json.output.toLowerCase();
@@ -75,9 +72,9 @@ describe('eval: date awareness', () => {
       console.log(`\n  expected: ${monthLong} ${day}, ${year}`);
       console.log(`  output: ${result.json.output.trim()}`);
       console.log(
-        `  tokens: ${result.json.tokens} | cost: $${result.json.cost.toFixed(4)} | steps: ${result.json.steps} | toolCalls: ${result.json.toolCalls} | exit: ${result.json.exitCode}`,
+        `  tokens: ${result.json.tokens} | cost: $${result.json.cost.toFixed(4)} | steps: ${result.json.steps} | toolCalls: ${result.json.toolCalls} | exit: ${result.json.exitCode}`
       );
     },
-    TIMEOUT,
+    TIMEOUT
   );
 });

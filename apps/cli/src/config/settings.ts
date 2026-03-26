@@ -1,20 +1,21 @@
-import { type Config, getConfig, setConfig } from './index.js';
+import { getConfig, setConfig } from './index.js';
+import type { Config } from './index.js';
 
 export type Settings = Pick<
   Config,
-  'spacing' | 'markdown' | 'model' | 'search'
+  "spacing" | "markdown" | "model" | "search"
 >;
 
 let cached: Settings | null = null;
 
 export function loadSettings(): Settings {
-  if (cached) return cached;
+  if (cached) {return cached;}
   const config = getConfig();
   cached = {
     spacing: config.spacing ?? 1,
     markdown: config.markdown ?? true,
-    model: config.model ?? '',
-    search: config.search ?? 'perplexity',
+    model: config.model ?? "",
+    search: config.search ?? "perplexity",
   };
   return cached;
 }
@@ -25,7 +26,7 @@ export function getSetting<K extends keyof Settings>(key: K): Settings[K] {
 
 export function setSetting<K extends keyof Settings>(
   key: K,
-  value: Settings[K],
+  value: Settings[K]
 ): void {
   setConfig({ [key]: value });
   cached = null;

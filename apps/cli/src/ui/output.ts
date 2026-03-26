@@ -19,7 +19,7 @@ export class Output {
 
   /** Write to stdout. Silently dropped while output is locked. */
   write(text: string): void {
-    if (this._locked) return;
+    if (this._locked) {return;}
     process.stdout.write(text);
   }
 
@@ -29,7 +29,7 @@ export class Output {
    * Returns `null` if the output is already locked (prevents re-entrancy).
    */
   lock(): { write: (text: string) => void; release: () => void } | null {
-    if (this._locked) return null;
+    if (this._locked) {return null;}
     this._locked = true;
     return {
       write: (text: string) => process.stdout.write(text),

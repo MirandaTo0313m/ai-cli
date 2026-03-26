@@ -9,18 +9,12 @@
  *
  *   AI_GATEWAY_API_KEY=<key> bun test tests/evals/package-manager.test.ts
  */
-import { afterEach, describe, expect, test } from 'bun:test';
-import { writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-import {
-  assertFileContains,
-  assertFileExists,
-  assertNoFile,
-  cleanupWorkDir,
-  createWorkDir,
-  type EvalResult,
-  runEval,
-} from './eval-helpers';
+import { afterEach, describe, expect, test } from "bun:test";
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
+
+import { assertFileContains, assertFileExists, assertNoFile, cleanupWorkDir, createWorkDir, runEval } from './eval-helpers';
+import type { EvalResult } from './eval-helpers';
 
 const TIMEOUT = 600_000;
 const CLI_TIMEOUT = 300;
@@ -34,54 +28,54 @@ afterEach(() => {
   }
 });
 
-describe('eval: package manager detection', () => {
+describe("eval: package manager detection", () => {
   test(
-    'detects yarn from lockfile and uses it to install a dependency',
+    "detects yarn from lockfile and uses it to install a dependency",
     async () => {
       workDir = createWorkDir();
 
       const result: EvalResult = await runEval(
-        'Add the lodash package to this project.',
+        "Add the lodash package to this project.",
         {
           cwd: workDir,
           timeoutSec: CLI_TIMEOUT,
           setup: async (dir: string) => {
             writeFileSync(
-              join(dir, 'package.json'),
+              join(dir, "package.json"),
               JSON.stringify(
                 {
-                  name: 'test-yarn-project',
-                  version: '1.0.0',
+                  name: "test-yarn-project",
+                  version: "1.0.0",
                   dependencies: {},
                 },
                 null,
-                2,
-              ),
+                2
+              )
             );
-            writeFileSync(join(dir, 'yarn.lock'), '# yarn lockfile v1\n');
+            writeFileSync(join(dir, "yarn.lock"), "# yarn lockfile v1\n");
           },
-        },
+        }
       );
 
       // 1. yarn.lock still exists (agent used yarn)
-      assertFileExists(workDir, 'yarn.lock');
+      assertFileExists(workDir, "yarn.lock");
 
       // 2. No wrong lockfiles created
-      assertNoFile(workDir, 'package-lock.json');
-      assertNoFile(workDir, 'pnpm-lock.yaml');
-      assertNoFile(workDir, 'bun.lockb');
-      assertNoFile(workDir, 'bun.lock');
+      assertNoFile(workDir, "package-lock.json");
+      assertNoFile(workDir, "pnpm-lock.yaml");
+      assertNoFile(workDir, "bun.lockb");
+      assertNoFile(workDir, "bun.lock");
 
       // 3. lodash was added to package.json
-      assertFileContains(workDir, 'package.json', '"lodash"');
+      assertFileContains(workDir, "package.json", '"lodash"');
 
       // 4. Agent completed without getting stuck
       expect(result.json.exitCode).toBe(0);
 
       console.log(
-        `\n  tokens: ${result.json.tokens} | cost: $${result.json.cost.toFixed(4)} | steps: ${result.json.steps} | toolCalls: ${result.json.toolCalls} | exit: ${result.json.exitCode}`,
+        `\n  tokens: ${result.json.tokens} | cost: $${result.json.cost.toFixed(4)} | steps: ${result.json.steps} | toolCalls: ${result.json.toolCalls} | exit: ${result.json.exitCode}`
       );
     },
-    TIMEOUT,
+    TIMEOUT
   );
 });

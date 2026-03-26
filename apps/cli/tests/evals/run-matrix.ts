@@ -5,8 +5,9 @@
  *   bun run tests/evals/run-matrix.ts           # all models
  *   bun run tests/evals/run-matrix.ts grok      # fuzzy-filter to matching models
  */
-import { spawn } from 'node:child_process';
-import { EVAL_MODELS } from './eval-helpers';
+import { spawn } from "node:child_process";
+
+import { EVAL_MODELS } from "./eval-helpers";
 
 const filter = process.argv[2]?.toLowerCase();
 const models = filter
@@ -15,7 +16,7 @@ const models = filter
 
 if (models.length === 0) {
   console.error(`No models matched filter "${filter}"`);
-  console.error(`Available: ${EVAL_MODELS.join(', ')}`);
+  console.error(`Available: ${EVAL_MODELS.join(", ")}`);
   process.exit(1);
 }
 
@@ -28,29 +29,29 @@ interface RunResult {
 const results: RunResult[] = [];
 
 for (const model of models) {
-  console.log(`\n${'='.repeat(60)}`);
+  console.log(`\n${"=".repeat(60)}`);
   console.log(`  MODEL: ${model}`);
-  console.log(`${'='.repeat(60)}\n`);
+  console.log(`${"=".repeat(60)}\n`);
 
   const start = Date.now();
   const code = await new Promise<number | null>((resolve) => {
-    const child = spawn('bun', ['test', 'tests/evals/'], {
+    const child = spawn("bun", ["test", "tests/evals/"], {
       cwd: import.meta.dirname
-        ? import.meta.dirname.replace(/\/tests\/evals$/, '')
+        ? import.meta.dirname.replace(/\/tests\/evals$/, "")
         : process.cwd(),
       env: { ...process.env, EVAL_MODEL: model },
-      stdio: 'inherit',
+      stdio: "inherit",
     });
-    child.on('close', resolve);
+    child.on("close", resolve);
   });
   results.push({ model, exitCode: code, durationMs: Date.now() - start });
 }
 
-console.log(`\n${'='.repeat(60)}`);
-console.log('  MATRIX RESULTS');
-console.log(`${'='.repeat(60)}`);
+console.log(`\n${"=".repeat(60)}`);
+console.log("  MATRIX RESULTS");
+console.log(`${"=".repeat(60)}`);
 for (const r of results) {
-  const status = r.exitCode === 0 ? 'PASS' : 'FAIL';
+  const status = r.exitCode === 0 ? "PASS" : "FAIL";
   const mins = (r.durationMs / 60_000).toFixed(1);
   console.log(`  ${status}  ${r.model}  (${mins}m)`);
 }

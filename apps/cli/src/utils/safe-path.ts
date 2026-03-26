@@ -1,12 +1,12 @@
-import * as fs from 'node:fs';
-import * as os from 'node:os';
-import * as path from 'node:path';
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
 
 /**
  * Expands a leading `~` or `~user` to the home directory.
  */
 function expandTilde(filePath: string): string {
-  if (filePath === '~' || filePath.startsWith('~/')) {
+  if (filePath === "~" || filePath.startsWith("~/")) {
     return path.join(os.homedir(), filePath.slice(1));
   }
   return filePath;

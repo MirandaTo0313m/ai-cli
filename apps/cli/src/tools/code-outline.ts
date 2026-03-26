@@ -1,9 +1,11 @@
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { tool } from 'ai';
-import { z } from 'zod';
-import { resolveAnyPath, safePath } from '../utils/safe-path.js';
-import { confirm } from './confirm.js';
+import * as fs from "node:fs";
+import * as path from "node:path";
+
+import { tool } from "ai";
+import { z } from "zod";
+
+import { resolveAnyPath, safePath } from "../utils/safe-path.js";
+import { confirm } from "./confirm.js";
 
 interface Symbol {
   name: string;
@@ -13,128 +15,133 @@ interface Symbol {
 
 /* ── Language-specific regex extractors ───────────────────── */
 
-const TS_JS_PATTERNS: Array<{ kind: string; re: RegExp }> = [
+const TS_JS_PATTERNS: { kind: string; re: RegExp }[] = [
   {
-    kind: 'function',
+    kind: "function",
     re: /^(?:export\s+)?(?:async\s+)?function\s+(\w+)/,
   },
   {
-    kind: 'const',
+    kind: "const",
     re: /^(?:export\s+)?(?:const|let|var)\s+(\w+)\s*[=:]/,
   },
   {
-    kind: 'class',
+    kind: "class",
     re: /^(?:export\s+)?(?:abstract\s+)?class\s+(\w+)/,
   },
   {
-    kind: 'interface',
+    kind: "interface",
     re: /^(?:export\s+)?(?:interface|type)\s+(\w+)/,
   },
   {
-    kind: 'enum',
+    kind: "enum",
     re: /^(?:export\s+)?enum\s+(\w+)/,
   },
   {
-    kind: 'export',
+    kind: "export",
     re: /^export\s+default\s+(?:function|class|abstract\s+class)\s+(\w+)/,
   },
   {
-    kind: 'export-default',
+    kind: "export-default",
     re: /^export\s+default\s+(\w+)/,
   },
 ];
 
-const PYTHON_PATTERNS: Array<{ kind: string; re: RegExp }> = [
+const PYTHON_PATTERNS: { kind: string; re: RegExp }[] = [
   {
-    kind: 'class',
+    kind: "class",
     re: /^class\s+(\w+)/,
   },
   {
-    kind: 'function',
+    kind: "function",
     re: /^(?:async\s+)?def\s+(\w+)/,
   },
   {
-    kind: 'variable',
+    kind: "variable",
     re: /^(\w+)\s*(?::\s*\w+)?\s*=/,
   },
 ];
 
-const GO_PATTERNS: Array<{ kind: string; re: RegExp }> = [
+const GO_PATTERNS: { kind: string; re: RegExp }[] = [
   {
-    kind: 'function',
+    kind: "function",
     re: /^func\s+(?:\(\w+\s+\*?\w+\)\s+)?(\w+)/,
   },
   {
-    kind: 'type',
+    kind: "type",
     re: /^type\s+(\w+)\s+(?:struct|interface)/,
   },
   {
-    kind: 'const',
+    kind: "const",
     re: /^(?:const|var)\s+(\w+)/,
   },
 ];
 
-const RUST_PATTERNS: Array<{ kind: string; re: RegExp }> = [
+const RUST_PATTERNS: { kind: string; re: RegExp }[] = [
   {
-    kind: 'function',
+    kind: "function",
     re: /^(?:pub\s+)?(?:async\s+)?fn\s+(\w+)/,
   },
   {
-    kind: 'struct',
+    kind: "struct",
     re: /^(?:pub\s+)?struct\s+(\w+)/,
   },
   {
-    kind: 'enum',
+    kind: "enum",
     re: /^(?:pub\s+)?enum\s+(\w+)/,
   },
   {
-    kind: 'trait',
+    kind: "trait",
     re: /^(?:pub\s+)?trait\s+(\w+)/,
   },
   {
-    kind: 'impl',
+    kind: "impl",
     re: /^impl(?:<[^>]+>)?\s+(\w+)/,
   },
 ];
 
 function getPatternsForFile(
-  filePath: string,
-): Array<{ kind: string; re: RegExp }> | null {
+  filePath: string
+): { kind: string; re: RegExp }[] | null {
   const ext = path.extname(filePath).toLowerCase();
   switch (ext) {
-    case '.ts':
-    case '.tsx':
-    case '.js':
-    case '.jsx':
-    case '.mts':
-    case '.mjs':
-    case '.cts':
-    case '.cjs':
+    case ".ts":
+    case ".tsx":
+    case ".js":
+    case ".jsx":
+    case ".mts":
+    case ".mjs":
+    case ".cts":
+    case ".cjs": {
       return TS_JS_PATTERNS;
-    case '.py':
+    }
+    case ".py": {
       return PYTHON_PATTERNS;
-    case '.go':
+    }
+    case ".go": {
       return GO_PATTERNS;
-    case '.rs':
+    }
+    case ".rs": {
       return RUST_PATTERNS;
-    default:
+    }
+    default: {
       return null;
+    }
   }
 }
 
 function extractSymbols(filePath: string, content: string): Symbol[] {
   const patterns = getPatternsForFile(filePath);
-  if (!patterns) return [];
+  if (!patterns) {return [];}
 
   const symbols: Symbol[] = [];
   const seen = new Set<string>();
-  const lines = content.split('\n');
+  const lines = content.split("\n");
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trimStart();
     // Skip comments
-    if (line.startsWith('//') || line.startsWith('#') || line.startsWith('*'))
-      continue;
+    if (line.startsWith("//") || line.startsWith("#") || line.startsWith("*"))
+      {continue;}
 
     for (const { kind, re } of patterns) {
       const m = line.match(re);
@@ -153,26 +160,26 @@ function extractSymbols(filePath: string, content: string): Symbol[] {
 }
 
 function formatSymbols(filePath: string, symbols: Symbol[]): string {
-  if (symbols.length === 0) return `${filePath}: no symbols found`;
+  if (symbols.length === 0) {return `${filePath}: no symbols found`;}
   const lines = symbols.map((s) => `  ${s.kind} ${s.name} (line ${s.line})`);
-  return `${filePath}:\n${lines.join('\n')}`;
+  return `${filePath}:\n${lines.join("\n")}`;
 }
 
 /* ── tool ─────────────────────────────────────────────────── */
 
 export const codeOutline = tool({
   description:
-    'Get an outline of code symbols (functions, classes, exports, types) from a file or all supported files in a directory. Use this to understand code structure without reading entire files.',
+    "Get an outline of code symbols (functions, classes, exports, types) from a file or all supported files in a directory. Use this to understand code structure without reading entire files.",
   inputSchema: z.object({
     filePath: z
       .string()
       .describe(
-        'File or directory path. For directories, outlines all supported files.',
+        "File or directory path. For directories, outlines all supported files."
       ),
     maxFiles: z
       .number()
       .optional()
-      .describe('Max files to outline in a directory (default 20)'),
+      .describe("Max files to outline in a directory (default 20)"),
   }),
   execute: async ({ filePath, maxFiles = 20 }) => {
     try {
@@ -180,10 +187,10 @@ export const codeOutline = tool({
       if (!fullPath) {
         const allowed = await confirm(
           `outline code outside project: ${filePath}`,
-          { tool: 'codeOutline', noAlways: true },
+          { tool: "codeOutline", noAlways: true }
         );
         if (!allowed)
-          return { error: 'User denied access to path outside project.' };
+          {return { error: "User denied access to path outside project." };}
         fullPath = resolveAnyPath(filePath);
       }
 
@@ -194,11 +201,11 @@ export const codeOutline = tool({
       const stat = fs.statSync(fullPath);
 
       if (stat.isFile()) {
-        const content = fs.readFileSync(fullPath, 'utf-8');
+        const content = fs.readFileSync(fullPath, "utf8");
         const symbols = extractSymbols(fullPath, content);
         const output = formatSymbols(
           path.relative(process.cwd(), fullPath) || filePath,
-          symbols,
+          symbols
         );
         return { outline: output, symbols };
       }
@@ -208,14 +215,14 @@ export const codeOutline = tool({
       let fileCount = 0;
 
       function walkDir(dir: string): void {
-        if (fileCount >= maxFiles) return;
+        if (fileCount >= maxFiles) {return;}
         const SKIP = new Set([
-          'node_modules',
-          '.git',
-          'dist',
-          'build',
-          '.next',
-          'coverage',
+          "node_modules",
+          ".git",
+          "dist",
+          "build",
+          ".next",
+          "coverage",
         ]);
         let entries: fs.Dirent[];
         try {
@@ -224,18 +231,18 @@ export const codeOutline = tool({
           return;
         }
         for (const e of entries) {
-          if (fileCount >= maxFiles) return;
-          if (e.name.startsWith('.') || SKIP.has(e.name)) continue;
+          if (fileCount >= maxFiles) {return;}
+          if (e.name.startsWith(".") || SKIP.has(e.name)) {continue;}
           const full = path.join(dir, e.name);
           if (e.isDirectory()) {
             walkDir(full);
           } else if (e.isFile() && getPatternsForFile(full)) {
             try {
-              const content = fs.readFileSync(full, 'utf-8');
+              const content = fs.readFileSync(full, "utf8");
               const symbols = extractSymbols(full, content);
               if (symbols.length > 0) {
                 results.push(
-                  formatSymbols(path.relative(process.cwd(), full), symbols),
+                  formatSymbols(path.relative(process.cwd(), full), symbols)
                 );
               }
               fileCount++;
@@ -247,11 +254,11 @@ export const codeOutline = tool({
       walkDir(fullPath);
 
       if (results.length === 0) {
-        return { outline: 'No symbols found', symbols: [] };
+        return { outline: "No symbols found", symbols: [] };
       }
 
       return {
-        outline: results.join('\n\n'),
+        outline: results.join("\n\n"),
         filesScanned: fileCount,
       };
     } catch {

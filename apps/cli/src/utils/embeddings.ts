@@ -1,7 +1,7 @@
-import { AI_CLI_HEADERS } from './constants.js';
-import { GATEWAY_URL } from './models.js';
+import { AI_CLI_HEADERS } from "./constants.js";
+import { GATEWAY_URL } from "./models.js";
 
-const EMBEDDING_MODEL = 'openai/text-embedding-3-small';
+const EMBEDDING_MODEL = "openai/text-embedding-3-small";
 
 export interface EmbeddingResult {
   embedding: number[];
@@ -13,12 +13,12 @@ export interface EmbeddingResult {
  * Uses the OpenAI-compatible /v1/embeddings endpoint.
  */
 export async function embed(inputs: string[]): Promise<number[][]> {
-  if (inputs.length === 0) return [];
+  if (inputs.length === 0) {return [];}
 
   const res = await fetch(`${GATEWAY_URL}/v1/embeddings`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...AI_CLI_HEADERS,
     },
     body: JSON.stringify({
@@ -30,7 +30,7 @@ export async function embed(inputs: string[]): Promise<number[][]> {
 
   if (!res.ok) {
     throw new Error(
-      `embedding request failed: ${res.status} ${res.statusText}`,
+      `embedding request failed: ${res.status} ${res.statusText}`
     );
   }
 
@@ -39,11 +39,11 @@ export async function embed(inputs: string[]): Promise<number[][]> {
   };
 
   if (!json?.data || !Array.isArray(json.data)) {
-    throw new Error('unexpected embedding response format');
+    throw new Error("unexpected embedding response format");
   }
 
   // Sort by index to match input order
-  const sorted = json.data.sort((a, b) => a.index - b.index);
+  const sorted = json.data.toSorted((a, b) => a.index - b.index);
   return sorted.map((d) => d.embedding);
 }
 
@@ -51,7 +51,7 @@ export async function embed(inputs: string[]): Promise<number[][]> {
  * Cosine similarity between two vectors.
  */
 export function cosineSimilarity(a: number[], b: number[]): number {
-  if (a.length !== b.length) return 0;
+  if (a.length !== b.length) {return 0;}
   let dot = 0;
   let magA = 0;
   let magB = 0;

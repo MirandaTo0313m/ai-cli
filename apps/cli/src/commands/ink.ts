@@ -1,4 +1,4 @@
-import { terminal } from '../ui/terminal.js';
+import { terminal } from "../ui/terminal.js";
 
 interface Options {
   model: string;

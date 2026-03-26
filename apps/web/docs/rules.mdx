@@ -1,0 +1,48 @@
+---
+title: Rules
+description: Custom instructions via AGENTS.md files.
+order: 16
+---
+
+## What are rules?
+
+Rules are custom instructions that guide the AI's behavior. They're defined in `AGENTS.md` files and loaded at the start of each session.
+
+## Global rules
+
+Create `~/.ai-cli/AGENTS.md` for instructions that apply to every session:
+
+```markdown
+- always use typescript
+- prefer functional patterns
+- write tests with vitest
+```
+
+## Project rules
+
+Create `AGENTS.md` in your project root for project-specific instructions:
+
+```markdown
+- this project uses bun
+- components go in src/components/
+- use tailwind for styling
+```
+
+## Viewing active rules
+
+```bash
+/rules
+```
+
+<Callout type="tip">
+  The AI loads both global and project rules automatically. Project rules take precedence when they conflict with global rules.
+</Callout>
+
+## Examples
+
+<Cards>
+  <Card title="Code style" description="&quot;use single quotes, semicolons, 2-space indent&quot;" />
+  <Card title="Architecture" description="&quot;follow hexagonal architecture, keep domain pure&quot;" />
+  <Card title="Testing" description="&quot;write integration tests, mock external APIs only&quot;" />
+  <Card title="Language" description="&quot;respond in Japanese&quot;, &quot;use British English&quot;" />
+</Cards>

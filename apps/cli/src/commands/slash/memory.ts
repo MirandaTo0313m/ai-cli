@@ -1,13 +1,14 @@
-import * as fs from 'node:fs';
-import { MEMORIES_FILE } from '../../config/paths.js';
-import { migrateOldMemories } from '../../utils/memory-migration.js';
-import type { CommandHandler } from './types.js';
+import * as fs from "node:fs";
+
+import { MEMORIES_FILE } from "../../config/paths.js";
+import { migrateOldMemories } from "../../utils/memory-migration.js";
+import type { CommandHandler } from "./types.js";
 
 function loadMemories(): string[] {
   migrateOldMemories();
   try {
     if (fs.existsSync(MEMORIES_FILE)) {
-      const data = JSON.parse(fs.readFileSync(MEMORIES_FILE, 'utf-8'));
+      const data = JSON.parse(fs.readFileSync(MEMORIES_FILE, "utf8"));
       return Array.isArray(data) ? data : [];
     }
   } catch {
@@ -19,12 +20,12 @@ function loadMemories(): string[] {
 export const memory: CommandHandler = (_ctx, args) => {
   const action = args?.trim().toLowerCase();
 
-  if (action === 'clear') {
+  if (action === "clear") {
     if (fs.existsSync(MEMORIES_FILE)) {
       fs.unlinkSync(MEMORIES_FILE);
-      return { output: 'memories cleared' };
+      return { output: "memories cleared" };
     }
-    return { output: 'no memories to clear' };
+    return { output: "no memories to clear" };
   }
 
   const memories = loadMemories();
@@ -37,6 +38,6 @@ export const memory: CommandHandler = (_ctx, args) => {
   for (const mem of memories) {
     lines.push(`  - ${mem}`);
   }
-  lines.push('\nuse /memory clear to delete all');
-  return { output: lines.join('\n') };
+  lines.push("\nuse /memory clear to delete all");
+  return { output: lines.join("\n") };
 };

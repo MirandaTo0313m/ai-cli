@@ -1,22 +1,22 @@
-import { setModel } from '../../config/index.js';
-import { fetchModels, scoreMatch } from '../../utils/models.js';
-import type { CommandHandler } from './types.js';
+import { setModel } from "../../config/index.js";
+import { fetchModels, scoreMatch } from "../../utils/models.js";
+import type { CommandHandler } from "./types.js";
 
 export const model: CommandHandler = async (ctx, args) => {
   const search = args?.trim().toLowerCase();
-  if (!search) return {};
+  if (!search) {return {};}
 
   let allModels: { id: string }[];
   try {
     allModels = await fetchModels();
   } catch {
-    return { output: 'failed to fetch models' };
+    return { output: "failed to fetch models" };
   }
 
   const scored = allModels
     .map((m) => ({ model: m, score: scoreMatch(m.id, search) }))
     .filter((x) => x.score > 0)
-    .sort((a, b) => b.score - a.score)
+    .toSorted((a, b) => b.score - a.score)
     .slice(0, 10);
 
   if (scored.length === 0) {
@@ -31,11 +31,11 @@ export const model: CommandHandler = async (ctx, args) => {
 
   const lines = [`models matching "${search}":`];
   for (const { model } of scored) {
-    const prefix = model.id === ctx.model ? '› ' : '  ';
+    const prefix = model.id === ctx.model ? "› " : "  ";
     lines.push(`${prefix}${model.id}`);
   }
-  lines.push('');
+  lines.push("");
   lines.push(`current: ${ctx.model}`);
-  lines.push('/model <name> to switch');
-  return { output: lines.join('\n') };
+  lines.push("/model <name> to switch");
+  return { output: lines.join("\n") };
 };

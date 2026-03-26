@@ -1,9 +1,12 @@
-import { type ChildProcess, spawn } from 'node:child_process';
-import { tool } from 'ai';
-import { z } from 'zod';
-import { log as debug } from '../utils/debug.js';
-import { mask } from '../utils/mask.js';
-import { confirm } from './confirm.js';
+import { spawn } from 'node:child_process';
+import type { ChildProcess } from 'node:child_process';
+
+import { tool } from "ai";
+import { z } from "zod";
+
+import { log as debug } from "../utils/debug.js";
+import { mask } from "../utils/mask.js";
+import { confirm } from "./confirm.js";
 
 const cwd = process.cwd();
 const TIMEOUT = 60000;
@@ -22,46 +25,46 @@ export function killRunningCommand(): void {
   if (proc?.pid) {
     // Kill the entire process group (shell + children like npm)
     try {
-      process.kill(-proc.pid, 'SIGTERM');
+      process.kill(-proc.pid, "SIGTERM");
     } catch {
       // Process might already be dead
       try {
-        proc.kill('SIGKILL');
+        proc.kill("SIGKILL");
       } catch {}
     }
   }
 
   // Immediately resolve so the stream can finish
   if (resolve) {
-    resolve({ error: 'Command cancelled by user. Do not retry.' });
+    resolve({ error: "Command cancelled by user. Do not retry." });
   }
 }
 
 export const runCommand = tool({
   description:
-    'Run shell commands. Use for: date, pwd, ls, git, package manager commands, build, test, etc. ALWAYS use the project package manager from the system prompt (pnpm/bun/yarn) — NEVER default to npm. NEVER use for dev/start/watch/serve - those need startProcess.',
+    "Run shell commands. Use for: date, pwd, ls, git, package manager commands, build, test, etc. ALWAYS use the project package manager from the system prompt (pnpm/bun/yarn) — NEVER default to npm. NEVER use for dev/start/watch/serve - those need startProcess.",
   inputSchema: z.object({
-    command: z.string().describe('The shell command to execute'),
+    command: z.string().describe("The shell command to execute"),
   }),
   execute: async ({ command: rawCommand }) => {
     const command = rawCommand
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'");
+      .replaceAll(/&amp;/g, "&")
+      .replaceAll(/&lt;/g, "<")
+      .replaceAll(/&gt;/g, ">")
+      .replaceAll(/&quot;/g, '"')
+      .replaceAll(/&#39;/g, "'");
     const lower = command.toLowerCase();
-    const blocked = ['dev', 'start', 'serve', 'watch', 'preview'];
+    const blocked = ["dev", "start", "serve", "watch", "preview"];
     if (blocked.some((b) => new RegExp(`\\b${b}\\b`).test(lower))) {
-      return { error: 'use startProcess for long-running commands' };
+      return { error: "use startProcess for long-running commands" };
     }
 
     const ok = await confirm(`Run: ${command}?`, {
-      tool: 'runCommand',
+      tool: "runCommand",
       command,
     });
     if (!ok) {
-      return { error: 'User denied this action. Do not retry.' };
+      return { error: "User denied this action. Do not retry." };
     }
 
     debug(`runCommand: ${command}`);
@@ -73,7 +76,7 @@ export const runCommand = tool({
       let resolved = false;
 
       const done = (value: unknown) => {
-        if (resolved) return;
+        if (resolved) {return;}
         resolved = true;
         activeProc = null;
         activeResolve = null;
@@ -84,7 +87,7 @@ export const runCommand = tool({
         cwd,
         shell: true,
         detached: true, // Create process group so we can kill the whole tree
-        stdio: ['ignore', 'pipe', 'pipe'],
+        stdio: ["ignore", "pipe", "pipe"],
       });
       activeProc = proc;
       activeResolve = done;
@@ -96,12 +99,12 @@ export const runCommand = tool({
         const pid = proc.pid;
         if (pid) {
           try {
-            process.kill(-pid, 'SIGTERM');
+            process.kill(-pid, "SIGTERM");
           } catch {
-            proc.kill('SIGTERM');
+            proc.kill("SIGTERM");
           }
         } else {
-          proc.kill('SIGTERM');
+          proc.kill("SIGTERM");
         }
       };
 
@@ -123,18 +126,18 @@ export const runCommand = tool({
         chunks.push(data.toString());
       };
 
-      proc.stdout?.on('data', onData);
-      proc.stderr?.on('data', onData);
+      proc.stdout?.on("data", onData);
+      proc.stderr?.on("data", onData);
 
-      proc.on('close', (code) => {
+      proc.on("close", (code) => {
         clearInterval(checkInactivity);
         clearTimeout(totalTimeout);
 
-        const output = mask(chunks.join('').trim());
+        const output = mask(chunks.join("").trim());
         const result = output ? `$ ${command}\n${output}` : `$ ${command}`;
 
         if (killed) {
-          done({ error: 'Command cancelled', output: result });
+          done({ error: "Command cancelled", output: result });
         } else if (code === 0) {
           done({ output: result, silent: true });
         } else {
@@ -142,7 +145,7 @@ export const runCommand = tool({
         }
       });
 
-      proc.on('error', (err) => {
+      proc.on("error", (err) => {
         clearInterval(checkInactivity);
         clearTimeout(totalTimeout);
         done({ error: err.message, output: `$ ${command}` });

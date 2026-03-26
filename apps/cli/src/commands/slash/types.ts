@@ -1,7 +1,9 @@
-import type * as readline from 'node:readline';
-import type { ModelMessage } from 'ai';
-import type { Chat } from '../../config/chats.js';
-import type { TokenUsage } from '../../hooks/chat.js';
+import type * as readline from "node:readline";
+
+import type { ModelMessage } from "ai";
+
+import type { Chat } from "../../config/chats.js";
+import type { TokenUsage } from "../../hooks/chat.js";
 
 export interface Context {
   model: string;
@@ -31,5 +33,5 @@ export interface CommandResult {
 
 export type CommandHandler = (
   ctx: Context,
-  args?: string,
+  args?: string
 ) => Promise<CommandResult | undefined> | CommandResult | undefined;

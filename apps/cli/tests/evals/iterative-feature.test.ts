@@ -10,16 +10,10 @@
  *
  *   AI_GATEWAY_API_KEY=<key> bun test tests/evals/iterative-feature.test.ts
  */
-import { afterEach, describe, expect, test } from 'bun:test';
-import {
-  assertAnyFileContains,
-  assertFileExists,
-  cleanupChat,
-  cleanupWorkDir,
-  createWorkDir,
-  type MultiTurnEvalResult,
-  runMultiTurnEval,
-} from './eval-helpers';
+import { afterEach, describe, expect, test } from "bun:test";
+
+import { assertAnyFileContains, assertFileExists, cleanupChat, cleanupWorkDir, createWorkDir, runMultiTurnEval } from './eval-helpers';
+import type { MultiTurnEvalResult } from './eval-helpers';
 
 const TIMEOUT = 600_000;
 const CLI_TIMEOUT = 300;
@@ -38,9 +32,9 @@ afterEach(() => {
   }
 });
 
-describe('eval: iterative feature building (multi-turn)', () => {
+describe("eval: iterative feature building (multi-turn)", () => {
   test(
-    'builds a counter page, then adds reset button and dark mode',
+    "builds a counter page, then adds reset button and dark mode",
     async () => {
       workDir = createWorkDir();
 
@@ -48,26 +42,26 @@ describe('eval: iterative feature building (multi-turn)', () => {
         [
           {
             prompt:
-              'Create an index.html file with a button that counts clicks. Display the current count on the page. Use vanilla JavaScript (no frameworks).',
+              "Create an index.html file with a button that counts clicks. Display the current count on the page. Use vanilla JavaScript (no frameworks).",
             check: (r, _i) => {
               expect(r.json.exitCode).toBe(0);
-              assertFileExists(r.workDir, 'index.html');
-              assertAnyFileContains(r.workDir, ['html'], 'count');
+              assertFileExists(r.workDir, "index.html");
+              assertAnyFileContains(r.workDir, ["html"], "count");
             },
           },
           {
             prompt:
-              'Add a reset button that sets the count back to zero. Also add dark mode styles — dark background with light text.',
+              "Add a reset button that sets the count back to zero. Also add dark mode styles — dark background with light text.",
             check: (r, _i) => {
               expect(r.json.exitCode).toBe(0);
-              assertAnyFileContains(r.workDir, ['html'], 'reset');
+              assertAnyFileContains(r.workDir, ["html"], "reset");
             },
           },
         ],
         {
           cwd: workDir,
           timeoutSec: CLI_TIMEOUT,
-        },
+        }
       );
 
       chatId = result.turns[0]?.json.chatId;
@@ -79,10 +73,10 @@ describe('eval: iterative feature building (multi-turn)', () => {
       for (let i = 0; i < result.turns.length; i++) {
         const t = result.turns[i].json;
         console.log(
-          `\n  turn ${i + 1}: tokens: ${t.tokens} | cost: $${t.cost.toFixed(4)} | steps: ${t.steps} | toolCalls: ${t.toolCalls} | exit: ${t.exitCode}`,
+          `\n  turn ${i + 1}: tokens: ${t.tokens} | cost: $${t.cost.toFixed(4)} | steps: ${t.steps} | toolCalls: ${t.toolCalls} | exit: ${t.exitCode}`
         );
       }
     },
-    TIMEOUT,
+    TIMEOUT
   );
 });

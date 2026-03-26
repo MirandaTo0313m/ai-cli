@@ -9,18 +9,13 @@
  *
  *   AI_GATEWAY_API_KEY=<key> bun test tests/evals/fix-known-bug.test.ts
  */
-import { afterEach, describe, expect, test } from 'bun:test';
-import { execSync } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-import {
-  assertCommandSucceeds,
-  assertFileContains,
-  cleanupWorkDir,
-  createWorkDir,
-  type EvalResult,
-  runEval,
-} from './eval-helpers';
+import { afterEach, describe, expect, test } from "bun:test";
+import { execSync } from "node:child_process";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+
+import { assertCommandSucceeds, assertFileContains, cleanupWorkDir, createWorkDir, runEval } from './eval-helpers';
+import type { EvalResult } from './eval-helpers';
 
 const TIMEOUT = 600_000;
 const CLI_TIMEOUT = 300;
@@ -34,9 +29,9 @@ afterEach(() => {
   }
 });
 
-describe('eval: fix a known bug', () => {
+describe("eval: fix a known bug", () => {
   test(
-    'finds and fixes the buggy divide function, tests pass',
+    "finds and fixes the buggy divide function, tests pass",
     async () => {
       workDir = createWorkDir();
 
@@ -47,111 +42,111 @@ describe('eval: fix a known bug', () => {
           timeoutSec: CLI_TIMEOUT,
           setup: async (dir: string) => {
             writeFileSync(
-              join(dir, 'package.json'),
+              join(dir, "package.json"),
               JSON.stringify(
                 {
-                  name: 'math-lib',
-                  version: '1.0.0',
-                  type: 'module',
-                  scripts: { test: 'vitest run' },
-                  devDependencies: { vitest: 'latest', typescript: 'latest' },
+                  name: "math-lib",
+                  version: "1.0.0",
+                  type: "module",
+                  scripts: { test: "vitest run" },
+                  devDependencies: { vitest: "latest", typescript: "latest" },
                 },
                 null,
-                2,
-              ),
+                2
+              )
             );
 
             writeFileSync(
-              join(dir, 'tsconfig.json'),
+              join(dir, "tsconfig.json"),
               JSON.stringify(
                 {
                   compilerOptions: {
-                    target: 'ES2022',
-                    module: 'ESNext',
-                    moduleResolution: 'bundler',
+                    target: "ES2022",
+                    module: "ESNext",
+                    moduleResolution: "bundler",
                     strict: true,
-                    outDir: 'dist',
+                    outDir: "dist",
                   },
-                  include: ['src'],
+                  include: ["src"],
                 },
                 null,
-                2,
-              ),
+                2
+              )
             );
 
-            mkdirSync(join(dir, 'src'), { recursive: true });
+            mkdirSync(join(dir, "src"), { recursive: true });
 
             writeFileSync(
-              join(dir, 'src', 'math.ts'),
+              join(dir, "src", "math.ts"),
               [
-                'export function add(a: number, b: number): number {',
-                '  return a + b;',
-                '}',
-                '',
-                'export function subtract(a: number, b: number): number {',
-                '  return a - b;',
-                '}',
-                '',
-                'export function multiply(a: number, b: number): number {',
-                '  return a * b;',
-                '}',
-                '',
-                'export function divide(a: number, b: number): number {',
-                '  return a * b;',
-                '}',
-                '',
-              ].join('\n'),
+                "export function add(a: number, b: number): number {",
+                "  return a + b;",
+                "}",
+                "",
+                "export function subtract(a: number, b: number): number {",
+                "  return a - b;",
+                "}",
+                "",
+                "export function multiply(a: number, b: number): number {",
+                "  return a * b;",
+                "}",
+                "",
+                "export function divide(a: number, b: number): number {",
+                "  return a * b;",
+                "}",
+                "",
+              ].join("\n")
             );
 
             writeFileSync(
-              join(dir, 'src', 'math.test.ts'),
+              join(dir, "src", "math.test.ts"),
               [
                 "import { describe, expect, test } from 'vitest';",
                 "import { add, subtract, multiply, divide } from './math';",
-                '',
+                "",
                 "describe('math', () => {",
                 "  test('add', () => {",
-                '    expect(add(2, 3)).toBe(5);',
-                '  });',
-                '',
+                "    expect(add(2, 3)).toBe(5);",
+                "  });",
+                "",
                 "  test('subtract', () => {",
-                '    expect(subtract(5, 3)).toBe(2);',
-                '  });',
-                '',
+                "    expect(subtract(5, 3)).toBe(2);",
+                "  });",
+                "",
                 "  test('multiply', () => {",
-                '    expect(multiply(4, 3)).toBe(12);',
-                '  });',
-                '',
+                "    expect(multiply(4, 3)).toBe(12);",
+                "  });",
+                "",
                 "  test('divide', () => {",
-                '    expect(divide(10, 2)).toBe(5);',
-                '  });',
-                '',
+                "    expect(divide(10, 2)).toBe(5);",
+                "  });",
+                "",
                 "  test('divide by 1', () => {",
-                '    expect(divide(7, 1)).toBe(7);',
-                '  });',
-                '});',
-                '',
-              ].join('\n'),
+                "    expect(divide(7, 1)).toBe(7);",
+                "  });",
+                "});",
+                "",
+              ].join("\n")
             );
 
-            execSync('npm install', { cwd: dir, stdio: 'pipe' });
+            execSync("npm install", { cwd: dir, stdio: "pipe" });
           },
-        },
+        }
       );
 
       // 1. The buggy `a * b` in divide is gone
-      assertFileContains(workDir, 'src/math.ts', /divide[\s\S]*?a\s*\/\s*b/);
+      assertFileContains(workDir, "src/math.ts", /divide[\s\S]*?a\s*\/\s*b/);
 
       // 2. Tests pass
-      assertCommandSucceeds(workDir, 'npm test');
+      assertCommandSucceeds(workDir, "npm test");
 
       // 3. Agent completed successfully
       expect(result.json.exitCode).toBe(0);
 
       console.log(
-        `\n  tokens: ${result.json.tokens} | cost: $${result.json.cost.toFixed(4)} | steps: ${result.json.steps} | toolCalls: ${result.json.toolCalls} | exit: ${result.json.exitCode}`,
+        `\n  tokens: ${result.json.tokens} | cost: $${result.json.cost.toFixed(4)} | steps: ${result.json.steps} | toolCalls: ${result.json.toolCalls} | exit: ${result.json.exitCode}`
       );
     },
-    TIMEOUT,
+    TIMEOUT
   );
 });

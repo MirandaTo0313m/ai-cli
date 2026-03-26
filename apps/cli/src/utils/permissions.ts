@@ -1,9 +1,10 @@
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { BASE_DIR } from '../config/paths.js';
+import * as fs from "node:fs";
+import * as path from "node:path";
+
+import { BASE_DIR } from "../config/paths.js";
 
 function permissionsFile(): string {
-  return path.join(BASE_DIR, 'permissions.json');
+  return path.join(BASE_DIR, "permissions.json");
 }
 
 export interface Rule {
@@ -20,11 +21,11 @@ interface PermissionsData {
 let cached: PermissionsData | null = null;
 
 function load(): PermissionsData {
-  if (cached) return cached;
+  if (cached) {return cached;}
   try {
     const file = permissionsFile();
     if (fs.existsSync(file)) {
-      const data = JSON.parse(fs.readFileSync(file, 'utf-8'));
+      const data = JSON.parse(fs.readFileSync(file, "utf8"));
       if (data && Array.isArray(data.rules)) {
         cached = data as PermissionsData;
         return cached;
@@ -38,7 +39,7 @@ function load(): PermissionsData {
 function save(data: PermissionsData): void {
   const file = permissionsFile();
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf-8');
+  fs.writeFileSync(file, JSON.stringify(data, null, 2), "utf8");
   cached = data;
 }
 
@@ -49,18 +50,18 @@ function save(data: PermissionsData): void {
 export function isAllowed(
   tool: string,
   directory: string,
-  command?: string,
+  command?: string
 ): boolean {
   const { rules } = load();
   const dir = path.resolve(directory);
   for (const rule of rules) {
-    if (rule.tool !== tool) continue;
+    if (rule.tool !== tool) {continue;}
     // Directory must match or be a child (with path separator boundary)
     const ruleDir = path.resolve(rule.directory);
-    if (dir !== ruleDir && !dir.startsWith(ruleDir + path.sep)) continue;
+    if (dir !== ruleDir && !dir.startsWith(ruleDir + path.sep)) {continue;}
     // For runCommand, command must match exactly
-    if (rule.tool === 'runCommand') {
-      if (rule.command && rule.command === command) return true;
+    if (rule.tool === "runCommand") {
+      if (rule.command && rule.command === command) {return true;}
     } else {
       return true;
     }
@@ -74,7 +75,7 @@ export function isAllowed(
 export function addRule(
   tool: string,
   directory: string,
-  command?: string,
+  command?: string
 ): void {
   const data = load();
   const dir = path.resolve(directory);
@@ -83,12 +84,12 @@ export function addRule(
     (r) =>
       r.tool === tool &&
       r.directory === dir &&
-      (r.tool === 'runCommand' ? r.command === command : true),
+      (r.tool === "runCommand" ? r.command === command : true)
   );
-  if (exists) return;
+  if (exists) {return;}
 
   const rule: Rule = { tool, directory: dir };
-  if (command) rule.command = command;
+  if (command) {rule.command = command;}
   data.rules.push(rule);
   save(data);
 }
@@ -98,7 +99,7 @@ export function addRule(
  */
 export function removeRule(index: number): boolean {
   const data = load();
-  if (index < 0 || index >= data.rules.length) return false;
+  if (index < 0 || index >= data.rules.length) {return false;}
   data.rules.splice(index, 1);
   save(data);
   return true;

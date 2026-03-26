@@ -1,11 +1,12 @@
-import { tool } from 'ai';
-import { z } from 'zod';
-import { log as debug } from '../utils/debug.js';
+import { tool } from "ai";
+import { z } from "zod";
+
+import { log as debug } from "../utils/debug.js";
 import {
   getProcessLogs,
   setProcessUrls,
   startManagedProcess,
-} from '../utils/processes.js';
+} from "../utils/processes.js";
 
 const URL_RE = /https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0):\d+/gi;
 
@@ -17,7 +18,7 @@ const URL_RE = /https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0):\d+/gi;
  */
 async function collectUrls(
   pid: number,
-  maxMs = 15_000,
+  maxMs = 15_000
 ): Promise<{ urls: string[]; logs: string[] }> {
   const found = new Set<string>();
   let lastNewUrlAt = 0;
@@ -38,7 +39,7 @@ async function collectUrls(
     }
 
     // If we found URLs and haven't seen a new one in 3 s, assume done
-    if (found.size > 0 && Date.now() - lastNewUrlAt > 3_000) break;
+    if (found.size > 0 && Date.now() - lastNewUrlAt > 3_000) {break;}
 
     await new Promise((r) => setTimeout(r, 500));
   }
@@ -48,19 +49,19 @@ async function collectUrls(
 
 export const startProcess = tool({
   description:
-    'Start long-running background process. USE THIS for: dev, start, serve, watch, preview. ' +
-    'Waits up to 15 s for server URLs to appear. Returns all detected URLs and recent output. ' +
-    'ALWAYS report every URL back to the user. If no URLs are found, share the recent logs so the user knows what happened.',
+    "Start long-running background process. USE THIS for: dev, start, serve, watch, preview. " +
+    "Waits up to 15 s for server URLs to appear. Returns all detected URLs and recent output. " +
+    "ALWAYS report every URL back to the user. If no URLs are found, share the recent logs so the user knows what happened.",
   inputSchema: z.object({
-    command: z.string().describe('Command to run'),
+    command: z.string().describe("Command to run"),
   }),
   execute: async ({ command: rawCommand }) => {
     const command = rawCommand
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'");
+      .replaceAll(/&amp;/g, "&")
+      .replaceAll(/&lt;/g, "<")
+      .replaceAll(/&gt;/g, ">")
+      .replaceAll(/&quot;/g, '"')
+      .replaceAll(/&#39;/g, "'");
     debug(`startProcess: ${command}`);
     const proc = startManagedProcess(command);
 
@@ -72,15 +73,15 @@ export const startProcess = tool({
 
     const parts: string[] = [`${command} (pid: ${proc.pid})`];
     if (urls.length > 0) {
-      parts.push(`\nServers ready:\n${urls.map((u) => `  ${u}`).join('\n')}`);
+      parts.push(`\nServers ready:\n${urls.map((u) => `  ${u}`).join("\n")}`);
     } else if (logs.length > 0) {
-      parts.push('\nRecent output:');
-      parts.push(logs.slice(-20).join('\n'));
+      parts.push("\nRecent output:");
+      parts.push(logs.slice(-20).join("\n"));
     } else {
-      parts.push('\nNo output yet — the process may still be starting.');
+      parts.push("\nNo output yet — the process may still be starting.");
     }
 
-    const message = parts.join('');
+    const message = parts.join("");
 
     return {
       message,

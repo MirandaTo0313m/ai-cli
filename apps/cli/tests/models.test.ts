@@ -1,25 +1,26 @@
-import { describe, expect, test } from 'bun:test';
-import { getModelCapabilities } from '../src/utils/models.js';
+import { describe, expect, test } from "bun:test";
 
-describe('getModelCapabilities reasoning detection', () => {
+import { getModelCapabilities } from "../src/utils/models.js";
+
+describe("getModelCapabilities reasoning detection", () => {
   const reasoning = [
-    'openai/o1',
-    'openai/o1-mini',
-    'openai/o3-mini',
-    'openai/o4-mini',
-    'anthropic/claude-3.5-sonnet-thinking',
-    'some-reasoner',
-    'deep-reasoning-v2',
-    'custom/reason-model',
+    "openai/o1",
+    "openai/o1-mini",
+    "openai/o3-mini",
+    "openai/o4-mini",
+    "anthropic/claude-3.5-sonnet-thinking",
+    "some-reasoner",
+    "deep-reasoning-v2",
+    "custom/reason-model",
   ];
 
   const nonReasoning = [
-    'anthropic/claude-sonnet-4.5',
-    'google/gemini-2.0-flash',
-    'openai/gpt-4o',
-    'openai/gpt-4o-mini',
-    'meta/llama-3-70b',
-    'mistral/mistral-large',
+    "anthropic/claude-sonnet-4.5",
+    "google/gemini-2.0-flash",
+    "openai/gpt-4o",
+    "openai/gpt-4o-mini",
+    "meta/llama-3-70b",
+    "mistral/mistral-large",
   ];
 
   for (const id of reasoning) {

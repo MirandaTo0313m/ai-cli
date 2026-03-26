@@ -1,9 +1,11 @@
-import * as fs from 'node:fs';
-import * as os from 'node:os';
-import * as path from 'node:path';
-import { z } from 'zod';
-import { logError } from '../utils/errorlog.js';
-import { CONFIG_FILE, ensureBaseDir } from './paths.js';
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
+
+import { z } from "zod";
+
+import { logError } from "../utils/errorlog.js";
+import { CONFIG_FILE, ensureBaseDir } from "./paths.js";
 
 const reviewSchema = z
   .object({
@@ -19,7 +21,7 @@ const configSchema = z
     aliases: z.record(z.string(), z.string()).optional(),
     spacing: z.number().int().min(0).max(4).optional(),
     markdown: z.boolean().optional(),
-    search: z.enum(['perplexity', 'parallel']).optional(),
+    search: z.enum(["perplexity", "parallel"]).optional(),
     review: reviewSchema,
   })
   .strip();
@@ -29,7 +31,7 @@ export type Config = z.infer<typeof configSchema>;
 const defaults: Config = {
   spacing: 1,
   markdown: true,
-  search: 'perplexity',
+  search: "perplexity",
 };
 
 let cachedConfig: Config | null = null;
@@ -46,32 +48,32 @@ function checkConfigFile(): { changed: boolean; mtimeMs: number | null } {
 
 function migrateOldConfig(): Config | null {
   const home = os.homedir();
-  const oldRc = path.join(home, '.airc');
-  const oldSettings = path.join(home, '.ai-settings');
+  const oldRc = path.join(home, ".airc");
+  const oldSettings = path.join(home, ".ai-settings");
 
   let migrated: Config = {};
 
   try {
     if (fs.existsSync(oldRc)) {
-      const content = fs.readFileSync(oldRc, 'utf-8');
+      const content = fs.readFileSync(oldRc, "utf8");
       const keyMatch = content.match(/AI_GATEWAY_API_KEY=(.+)/);
-      if (keyMatch) migrated.apiKey = keyMatch[1].trim();
+      if (keyMatch) {migrated.apiKey = keyMatch[1].trim();}
       const modelMatch = content.match(/model=(.+)/);
-      if (modelMatch) migrated.model = modelMatch[1].trim();
+      if (modelMatch) {migrated.model = modelMatch[1].trim();}
       fs.unlinkSync(oldRc);
     }
-  } catch (e) {
-    logError(e);
+  } catch (error) {
+    logError(error);
   }
 
   try {
     if (fs.existsSync(oldSettings)) {
-      const data = JSON.parse(fs.readFileSync(oldSettings, 'utf-8'));
+      const data = JSON.parse(fs.readFileSync(oldSettings, "utf8"));
       migrated = { ...migrated, ...data };
       fs.unlinkSync(oldSettings);
     }
-  } catch (e) {
-    logError(e);
+  } catch (error) {
+    logError(error);
   }
 
   if (Object.keys(migrated).length > 0) {
@@ -82,17 +84,17 @@ function migrateOldConfig(): Config | null {
 
 export function getConfig(): Config {
   const check = checkConfigFile();
-  if (cachedConfig && !check.changed) return cachedConfig;
+  if (cachedConfig && !check.changed) {return cachedConfig;}
   ensureBaseDir();
   let result: Config;
   try {
     if (fs.existsSync(CONFIG_FILE)) {
-      const data = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf-8'));
+      const data = JSON.parse(fs.readFileSync(CONFIG_FILE, "utf8"));
 
-      if ('steps' in data) {
+      if ("steps" in data) {
         delete data.steps;
         try {
-          fs.writeFileSync(CONFIG_FILE, JSON.stringify(data, null, 2), 'utf-8');
+          fs.writeFileSync(CONFIG_FILE, JSON.stringify(data, null, 2), "utf8");
         } catch {
           // best-effort cleanup
         }
@@ -109,13 +111,13 @@ export function getConfig(): Config {
     if (migrated) {
       const parsed = configSchema.safeParse(migrated);
       result = { ...defaults, ...(parsed.success ? parsed.data : migrated) };
-      fs.writeFileSync(CONFIG_FILE, JSON.stringify(result, null, 2), 'utf-8');
+      fs.writeFileSync(CONFIG_FILE, JSON.stringify(result, null, 2), "utf8");
       cachedConfig = result;
       cachedMtimeMs = check.mtimeMs;
       return result;
     }
-  } catch (e) {
-    logError(e);
+  } catch (error) {
+    logError(error);
   }
   result = { ...defaults };
   cachedConfig = result;
@@ -127,7 +129,7 @@ export function setConfig(config: Partial<Config>): void {
   ensureBaseDir();
   const current = getConfig();
   const merged = { ...current, ...config };
-  fs.writeFileSync(CONFIG_FILE, JSON.stringify(merged, null, 2), 'utf-8');
+  fs.writeFileSync(CONFIG_FILE, JSON.stringify(merged, null, 2), "utf8");
   cachedConfig = null;
   cachedMtimeMs = null;
 }

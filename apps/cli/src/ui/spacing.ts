@@ -53,10 +53,10 @@ export class SpacingController {
    * Ensure exactly one separator line before normal output blocks.
    */
   beforeOutput(): void {
-    if (!this.needsGapBeforeOutput) return;
+    if (!this.needsGapBeforeOutput) {return;}
     this.needsGapBeforeOutput = false;
     this.firstStatusAfterUser = false;
-    this.write('\n');
+    this.write("\n");
   }
 
   /**
@@ -66,7 +66,7 @@ export class SpacingController {
     if (this.firstStatusAfterUser) {
       this.firstStatusAfterUser = false;
       this.needsGapBeforeOutput = false;
-      this.write('\n');
+      this.write("\n");
       return;
     }
     this.beforeOutput();
