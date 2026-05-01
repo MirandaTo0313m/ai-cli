@@ -1,20 +1,20 @@
 ---
 title: Introduction
-description: A minimal AI assistant that lives in your terminal.
+description: Generate text, images, and video from the terminal.
 order: 1
 ---
 
-ai-cli is a terminal-native AI agent powered by [Vercel AI Gateway](https://vercel.com/docs/ai-gateway). It connects to 50+ models from xAI, OpenAI, Anthropic, Google, and more through a single API key.
+ai-cli is a tiny, agent-native CLI for generating text, images, and video with dead-simple commands. It uses the [Vercel AI SDK](https://sdk.vercel.ai) and [AI Gateway](https://vercel.com/docs/ai-gateway) for unified access to hundreds of models.
 
 ## What it does
 
 <Cards>
-  <Card title="File operations" description="Read, write, and edit files with AI guidance" />
-  <Card title="Code search" description="Search codebases with regex and fuzzy matching" />
-  <Card title="Process control" description="Run commands and manage background processes" />
-  <Card title="Image analysis" description="Analyze images from clipboard or file" />
-  <Card title="Persistent memory" description="Remember facts across sessions" />
-  <Card title="CI integration" description="Structured JSON output for pipelines" />
+  <Card title="Image generation" description="Create images from text or existing images." />
+  <Card title="Video generation" description="Generate video from text or images." />
+  <Card title="Text generation" description="Generate text from prompts with any language model." />
+  <Card title="Multi-model comparison" description="Run the same prompt across multiple models in parallel." />
+  <Card title="Stdin piping" description="Pipe any content in and out for composable workflows." />
+  <Card title="Inline preview" description="See generated images and video frames directly in your terminal." />
 </Cards>
 
 ## Quick start
@@ -28,29 +28,33 @@ ai-cli is a terminal-native AI agent powered by [Vercel AI Gateway](https://verc
     ```
   </Step>
   <Step>
-    ### Set up your API key
+    ### Set your API key
 
     ```bash
-    ai init
+    export AI_GATEWAY_API_KEY="your-key"
     ```
   </Step>
   <Step>
-    ### Start using it
+    ### Generate something
 
     ```bash
-    ai
+    ai image "a cute dog"
+    ai video "a spinning triangle"
+    ai text "explain quantum computing"
     ```
   </Step>
 </Steps>
 
-## Modes
+## Commands
 
 <Cards>
-  <Card title="Interactive" description="Full terminal UI with streaming, slash commands, and tool use." href="/docs/interactive" />
-  <Card title="Single message" description="Ask a question and get an answer." href="/docs/single" />
-  <Card title="Headless" description="Run the full agent non-interactively for scripts and CI." href="/docs/headless" />
+  <Card title="image" description="Generate images from a prompt." href="/docs/commands#image" />
+  <Card title="video" description="Generate video from a prompt or image." href="/docs/commands#video" />
+  <Card title="text" description="Generate text from a prompt." href="/docs/commands#text" />
+  <Card title="models" description="List available models from the gateway." href="/docs/commands#models" />
+  <Card title="completions" description="Output shell completion scripts." href="/docs/commands#completions" />
 </Cards>
 
 <Callout type="tip">
-  New to ai-cli? Start with the [installation guide](/docs/installation) to get set up in under a minute.
+  ai-cli is designed to be used by both humans and agents. Predictable output behavior, JSON metadata mode, and stdin/stdout piping make it easy to integrate into any workflow.
 </Callout>

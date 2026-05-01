@@ -8,7 +8,7 @@ export function Footer() {
               ai-cli
             </div>
             <div className="mt-3 text-sm text-white/40">
-              Minimal terminal AI assistant.
+              Generate text, images, and video from your terminal.
             </div>
             <a
               href="https://vercel.com"
@@ -32,21 +32,22 @@ export function Footer() {
               Usage
             </div>
             <div className="mt-4 flex flex-col gap-2 font-mono text-sm text-white/45">
-              <span>ai</span>
-              <span>ai "message"</span>
-              <span>ai -p "prompt"</span>
-              <span>ai -m model</span>
+              <span>ai image &quot;prompt&quot;</span>
+              <span>ai video &quot;prompt&quot;</span>
+              <span>ai text &quot;prompt&quot;</span>
+              <span>ai models</span>
             </div>
           </div>
 
           <div>
             <div className="text-xs font-mono uppercase tracking-widest text-white/35">
-              Commands
+              Features
             </div>
             <div className="mt-4 flex flex-col gap-2 font-mono text-sm text-white/45">
-              <span>/new /clear /compress</span>
-              <span>/model /memory /diff</span>
-              <span>/rollback /copy /usage</span>
+              <span>multi-model comparison</span>
+              <span>stdin/stdout piping</span>
+              <span>inline preview</span>
+              <span>shell completions</span>
             </div>
           </div>
 
@@ -72,7 +73,7 @@ export function Footer() {
                 npm
               </a>
               <a
-                href="https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai%2Fapi-keys"
+                href="https://vercel.com/docs/ai-gateway"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm text-white/45 hover:text-white transition-colors"

@@ -1,59 +1,193 @@
 ---
-title: Slash Commands
-description: Built-in commands for managing sessions and context.
-order: 9
+title: Commands
+description: Full reference for all ai-cli commands and flags.
+order: 3
 ---
 
-Type `/` in interactive mode to see all available commands.
+## image
 
-## Chat management
+Generate images from a prompt.
 
-| Command | Description |
+```bash
+ai image "a sunset over mountains"
+ai image "edit this" < photo.png
+```
+
+### Options
+
+<Properties>
+  <Property name="-m, --model" type="string">
+    Model ID. Comma-separated for multi-model.
+  </Property>
+  <Property name="-o, --output" type="path">
+    Output file path or directory.
+  </Property>
+  <Property name="-n, --count" type="number" default="1">
+    Number of images per model.
+  </Property>
+  <Property name="-p, --concurrency" type="number" default="4">
+    Max parallel generations.
+  </Property>
+  <Property name="--size" type="WxH">
+    Image size (e.g. `1024x1024`).
+  </Property>
+  <Property name="--aspect-ratio" type="W:H">
+    Aspect ratio (e.g. `16:9`).
+  </Property>
+  <Property name="--quality" type="standard | hd">
+    Quality level (OpenAI models only).
+  </Property>
+  <Property name="--style" type="vivid | natural">
+    Style (OpenAI models only).
+  </Property>
+  <Property name="--no-preview" type="boolean">
+    Disable inline image preview.
+  </Property>
+  <Property name="-q, --quiet" type="boolean">
+    Suppress progress output.
+  </Property>
+  <Property name="--json" type="boolean">
+    Output metadata as JSON.
+  </Property>
+</Properties>
+
+---
+
+## video
+
+Generate video from a prompt or image.
+
+```bash
+ai video "a spinning triangle"
+ai image "a dragon" | ai video "animate this"
+```
+
+### Options
+
+<Properties>
+  <Property name="-m, --model" type="string">
+    Model ID. Comma-separated for multi-model.
+  </Property>
+  <Property name="-o, --output" type="path">
+    Output file path or directory.
+  </Property>
+  <Property name="-n, --count" type="number" default="1">
+    Number of videos per model.
+  </Property>
+  <Property name="-p, --concurrency" type="number" default="2">
+    Max parallel generations.
+  </Property>
+  <Property name="--aspect-ratio" type="W:H">
+    Aspect ratio (e.g. `16:9`).
+  </Property>
+  <Property name="--duration" type="seconds">
+    Duration in seconds.
+  </Property>
+  <Property name="--no-preview" type="boolean">
+    Disable inline video frame preview.
+  </Property>
+  <Property name="-q, --quiet" type="boolean">
+    Suppress progress output.
+  </Property>
+  <Property name="--json" type="boolean">
+    Output metadata as JSON.
+  </Property>
+</Properties>
+
+---
+
+## text
+
+Generate text from a prompt.
+
+```bash
+ai text "explain quantum computing"
+ai text "summarize this" < notes.txt
+```
+
+### Options
+
+<Properties>
+  <Property name="-m, --model" type="string">
+    Model ID (`provider/model`). Comma-separated for multi-model.
+  </Property>
+  <Property name="-o, --output" type="path">
+    Output file path or directory.
+  </Property>
+  <Property name="-f, --format" type="md | txt" default="md">
+    Output format.
+  </Property>
+  <Property name="-n, --count" type="number" default="1">
+    Number of generations per model.
+  </Property>
+  <Property name="-p, --concurrency" type="number" default="4">
+    Max parallel generations.
+  </Property>
+  <Property name="-s, --system" type="string">
+    System prompt.
+  </Property>
+  <Property name="--max-tokens" type="number">
+    Maximum tokens to generate.
+  </Property>
+  <Property name="-t, --temperature" type="number">
+    Temperature (0–2).
+  </Property>
+  <Property name="-q, --quiet" type="boolean">
+    Suppress progress output.
+  </Property>
+  <Property name="--json" type="boolean">
+    Output metadata as JSON.
+  </Property>
+</Properties>
+
+---
+
+## models
+
+List available models from the AI Gateway.
+
+```bash
+ai models
+ai models --type image
+ai models --provider openai --json
+```
+
+### Options
+
+<Properties>
+  <Property name="--type" type="text | image | video">
+    Filter by modality.
+  </Property>
+  <Property name="--provider" type="string">
+    Filter by provider (e.g. `openai`, `google`).
+  </Property>
+  <Property name="--json" type="boolean">
+    Output as JSON with descriptions.
+  </Property>
+</Properties>
+
+Models are fetched live from the AI Gateway. If the gateway is unreachable, a built-in fallback list is used.
+
+---
+
+## completions
+
+Output a shell completion script.
+
+```bash
+ai completions zsh
+ai completions bash
+ai completions fish
+```
+
+See [Installation](/docs/installation#shell-completions) for setup instructions.
+
+---
+
+## Exit codes
+
+| Code | Meaning |
 | --- | --- |
-| `/chat` | List or switch chats |
-| `/clear` | Clear the screen |
-
-## Context
-
-| Command | Description |
-| --- | --- |
-| `/usage` | Show token usage and cost |
-| `/compress` | Compress chat to save tokens |
-| `/summary` | Summarize the conversation |
-| `/plan` | Toggle read-only plan mode |
-| `/review` | Toggle automatic code review |
-
-## Model
-
-| Command | Description |
-| --- | --- |
-| `/model` | Show current model |
-| `/model <query>` | Switch model with fuzzy match |
-
-## Files
-
-| Command | Description |
-| --- | --- |
-| `/copy` | Copy last response to clipboard |
-| `/rollback` | Undo AI file changes |
-
-## System
-
-| Command | Description |
-| --- | --- |
-| `/info` | Show session info |
-| `/processes` | List running processes |
-| `/memory` | View saved memories |
-| `/mcp` | List MCP servers |
-| `/settings` | Open settings |
-| `/permissions` | Manage tool permissions |
-| `/alias` | Create command aliases |
-| `/rules` | View active rules |
-| `/skills` | List installed skills |
-| `/init` | Re-run API key setup |
-| `/help` | Show help |
-| `/version` | Show version |
-
-<Callout type="tip">
-  Commands support fuzzy matching too. Type `/mod` to quickly access `/model`, or `/comp` for `/compress`.
-</Callout>
+| `0` | Success |
+| `1` | All generations failed |
+| `2` | Partial failure (some succeeded, some failed) |

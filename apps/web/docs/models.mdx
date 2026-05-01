@@ -1,54 +1,75 @@
 ---
 title: Models
-description: Switch between 50+ models with fuzzy matching.
-order: 7
+description: Select models, compare outputs, and configure defaults.
+order: 4
 ---
 
-## Default model
+## Default models
 
-The default model is `anthropic/claude-sonnet-4.5`. Change it in [configuration](/docs/configuration) or per-request with `-m`.
+Each command type has a default model used when `-m` is not specified:
 
-## Switching models
+| Type | Default | Env override |
+| --- | --- | --- |
+| text | `openai/gpt-5.5` | `AI_CLI_TEXT_MODEL` |
+| image | `openai/gpt-image-2` | `AI_CLI_IMAGE_MODEL` |
+| video | `bytedance/seedance-2.0` | `AI_CLI_VIDEO_MODEL` |
 
-Use the `-m` flag with any model name or shorthand:
+The `-m` flag always takes priority over environment variables.
+
+## Specifying a model
+
+Use `provider/model-name` format:
 
 ```bash
-ai -m gpt-5 "hello"
-ai -m sonnet "hello"
-ai -m gemini "hello"
-ai -m llama "hello"
+ai text -m "anthropic/claude-sonnet-4" "hello"
+ai image -m "bfl/flux-2-pro" "a sunset"
 ```
 
-<Callout type="tip">
-  Fuzzy matching resolves partial names to the closest available model. Type `son` and it matches `anthropic/claude-sonnet-4.5`.
-</Callout>
+Short names (without the provider prefix) are resolved against the known model list:
+
+```bash
+ai text -m gpt-5.5 "hello"
+ai image -m flux-2-pro "a sunset"
+```
+
+## Multi-model comparison
+
+Generate with multiple models by comma-separating `-m`:
+
+```bash
+ai image "a sunset" -m "openai/gpt-image-1,xai/grok-imagine-image,bfl/flux-2-pro"
+```
+
+Combine with `-n` to generate multiple per model:
+
+```bash
+ai image "a sunset" -n 2 -m "openai/gpt-image-1,bfl/flux-2-pro"
+```
+
+This produces 4 images total (2 per model), saved as `output-1.png` through `output-4.png`.
 
 ## Listing models
 
 ```bash
-ai -l
+ai models                          # all models
+ai models --type image             # image models only
+ai models --provider google        # Google models only
+ai models --json                   # JSON with descriptions
 ```
 
-Shows all available models from the gateway.
-
-## In-session switching
-
-Use the `/model` slash command in interactive mode:
-
-```bash
-/model gpt-5
-/model sonnet
-```
+In human mode, models are grouped by provider and display short names. Use `--json` for machine-readable output with full IDs and descriptions.
 
 ## Providers
 
-All models are accessed through [Vercel AI Gateway](https://vercel.com/docs/ai-gateway), which supports:
+All models are accessed through [Vercel AI Gateway](https://vercel.com/docs/ai-gateway):
 
 <Cards>
-  <Card title="Anthropic" description="Claude Opus, Sonnet, Haiku" />
-  <Card title="OpenAI" description="GPT-5, GPT-4.1, o3, o4-mini" />
-  <Card title="Google" description="Gemini 2.5 Pro, Flash" />
-  <Card title="Meta" description="Llama 4 Scout, Maverick" />
-  <Card title="Mistral" description="Mistral Large, Medium" />
-  <Card title="xAI" description="Grok 3, Grok 3 Mini" />
+  <Card title="OpenAI" description="GPT-5.5, GPT-4.1, GPT Image 2, o3, o4-mini" />
+  <Card title="Anthropic" description="Claude Sonnet 4" />
+  <Card title="Google" description="Gemini 2.5 Pro, Imagen 4, Veo 3" />
+  <Card title="xAI" description="Grok 3, Grok Imagine" />
+  <Card title="Meta" description="Llama 4 Maverick" />
+  <Card title="Black Forest Labs" description="FLUX 2 Pro, FLUX Kontext" />
+  <Card title="ByteDance" description="Seedance 2.0, Seedream 5.0" />
+  <Card title="Kling AI" description="Kling v3.0" />
 </Cards>

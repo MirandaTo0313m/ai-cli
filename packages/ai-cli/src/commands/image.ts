@@ -91,6 +91,10 @@ export function registerImageCommand(program: Command) {
         async (modelId) => {
           const abort = AbortSignal.timeout(DEFAULT_TIMEOUT_MS);
           const result = await generateImage({
+            headers: {
+              "http-referer": "https://github.com/vercel-labs/ai-cli",
+              "x-title": "ai-cli",
+            },
             model: gateway.image(modelId),
             prompt: imagePrompt,
             abortSignal: abort,

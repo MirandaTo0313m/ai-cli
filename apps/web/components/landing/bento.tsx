@@ -7,23 +7,23 @@ interface item {
 const items: readonly item[] = [
   {
     id: "001",
-    title: "Slash commands",
-    body: "27 built-in commands for chat management, context control, model switching, and file operations. /new /compress /model /rollback and more.",
+    title: "Inline preview",
+    body: "Generated images and video frames display directly in your terminal using the Kitty graphics protocol. Supports Kitty, Ghostty, WezTerm, Warp, and iTerm2.",
   },
   {
     id: "002",
-    title: "Persistent memory",
-    body: "The AI remembers facts across sessions. Save project conventions, preferences, and context that carry over to every future conversation.",
+    title: "Agent-native output",
+    body: "Predictable behavior for scripts and agents. Raw stdout when piped, file saves when interactive. JSON metadata mode for CI pipelines.",
   },
   {
     id: "003",
-    title: "Image analysis",
-    body: "Paste images from clipboard with ctrl+v or attach files with --image. The AI sees screenshots, diagrams, and UI mockups natively.",
+    title: "Shell completions",
+    body: "Tab completion for commands, flags, and model names. Supports zsh, bash, and fish. Run ai completions <shell> to get started.",
   },
   {
     id: "004",
-    title: "Chat history",
-    body: "Every conversation is saved. Resume sessions, compress long contexts, review past interactions. Your terminal has a memory now.",
+    title: "Zero config",
+    body: "No config files, no init command, no setup wizard. Set an API key environment variable and start generating. Defaults work out of the box.",
   },
 ];
 
@@ -77,18 +77,18 @@ export function Bento() {
         <div className="grid gap-10 border-b border-white/[0.06] pb-12 md:grid-cols-[1.2fr_0.8fr] md:pb-14">
           <div>
             <h2 className="text-balance text-3xl font-semibold tracking-tight text-white md:text-5xl leading-[1.05]">
-              Built for how you work.
+              Built for composability.
             </h2>
           </div>
           <div className="md:pt-2">
             <p className="max-w-md text-pretty text-base leading-relaxed text-[#777]">
-              Not a chatbot. A terminal-native AI agent with file access,
-              process control, and persistent context across sessions.
+              Not a chatbot. A generation tool that fits into any workflow —
+              scripts, CI pipelines, agent toolchains, or just your terminal.
             </p>
             <div className="mt-6">
               <div className="inline-flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2 font-mono text-sm text-white/60">
                 <span className="text-white/30">$</span>
-                <span>ai init</span>
+                <span>ai text &quot;hello&quot;</span>
               </div>
             </div>
           </div>

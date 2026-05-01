@@ -10,44 +10,38 @@ interface row {
   readonly text: string;
 }
 
-const toolrows: readonly row[] = [
-  { tone: "cmd", text: "› find all unused exports in src/" },
+const multimodelrows: readonly row[] = [
+  { tone: "cmd", text: '$ ai image "a sunset" -m "gpt-image-2,flux-2-pro"' },
   { tone: "dim", text: "" },
-  { tone: "dim", text: "findFiles src/**/*.ts" },
-  { tone: "dim", text: "readFile src/utils/format.ts" },
-  { tone: "dim", text: "readFile src/utils/parse.ts" },
-  { tone: "dim", text: "" },
-  { tone: "code", text: "Found 3 unused exports:" },
-  { tone: "code", text: "" },
-  { tone: "code", text: "  src/utils/format.ts:12  formatDate" },
-  { tone: "code", text: "  src/utils/parse.ts:45   parseConfig" },
-  { tone: "code", text: "  src/utils/parse.ts:78   parseArgs" },
+  { tone: "code", text: "Saved to /Users/you/output-1.png (3.2s)" },
+  { tone: "code", text: "Saved to /Users/you/output-2.png (4.7s)" },
 ];
 
-const headlessrows: readonly row[] = [
-  { tone: "cmd", text: '$ ai -p --json "write tests for auth"' },
+const pipingrows: readonly row[] = [
+  { tone: "cmd", text: '$ git diff | ai text "explain these changes"' },
   { tone: "dim", text: "" },
-  { tone: "code", text: "{" },
-  { tone: "code", text: '  "output": "created tests/auth.test.ts",' },
-  { tone: "code", text: '  "model": "anthropic/claude-sonnet-4.5",' },
-  { tone: "code", text: '  "tokens": 2847,' },
-  { tone: "code", text: '  "cost": 0.02,' },
-  { tone: "code", text: '  "exitCode": 0' },
-  { tone: "code", text: "}" },
+  { tone: "code", text: "These changes refactor the auth module:" },
+  { tone: "code", text: "" },
+  { tone: "code", text: "  1. Splits session logic into its own file" },
+  { tone: "code", text: "  2. Adds token expiry validation" },
+  { tone: "code", text: "  3. Removes deprecated OAuth1 flow" },
+  { tone: "dim", text: "" },
+  { tone: "cmd", text: '$ ai image "a dragon" | ai video "animate this"' },
+  { tone: "code", text: "Saved to /Users/you/output.mp4" },
 ];
 
 const modelrows: readonly row[] = [
-  { tone: "cmd", text: "$ ai -m gpt-5 'explain this function'" },
-  { tone: "dim", text: "openai/gpt-5" },
+  { tone: "cmd", text: "$ ai models --type image" },
   { tone: "dim", text: "" },
-  { tone: "cmd", text: "$ ai -m sonnet 'refactor this'" },
-  { tone: "dim", text: "anthropic/claude-sonnet-4.5" },
-  { tone: "dim", text: "" },
-  { tone: "cmd", text: "$ ai -l" },
-  { tone: "code", text: "  anthropic/claude-sonnet-4.5" },
-  { tone: "code", text: "  openai/gpt-5" },
-  { tone: "code", text: "  google/gemini-2.5-pro" },
-  { tone: "dim", text: "  ...47 more models" },
+  { tone: "dim", text: "  openai" },
+  { tone: "code", text: "    gpt-image-2" },
+  { tone: "code", text: "    gpt-image-1" },
+  { tone: "dim", text: "  bfl" },
+  { tone: "code", text: "    flux-2-pro" },
+  { tone: "code", text: "    flux-kontext-pro" },
+  { tone: "dim", text: "  google" },
+  { tone: "code", text: "    imagen-4.0-generate-001" },
+  { tone: "dim", text: "  ...and more" },
 ];
 
 function rowstyle(tone: row["tone"]): string {
@@ -132,37 +126,37 @@ export function Features() {
         <div className="space-y-16 md:space-y-28">
           <Spotlight
             tone="slate"
-            title="22 tools, zero setup."
-            description="Read files, write code, search codebases, run commands, manage processes. The AI picks the right tool automatically. You just describe what you want."
+            title="Multi-model comparison."
+            description="Run the same prompt across multiple models in parallel. Compare outputs side by side to find the best result. Combine with -n to generate multiple per model."
             bullets={[
-              "file operations with confirmation dialogs",
-              "regex search across entire codebases",
-              "background process management",
+              "comma-separated model IDs for parallel generation",
+              "configurable concurrency limits",
+              "per-job timing and structured JSON output",
             ]}
-            window={<Panel rows={toolrows} />}
+            window={<Panel rows={multimodelrows} />}
           />
 
           <Spotlight
             tone="ash"
-            title="Headless mode for CI."
-            description="Run the full agent non-interactively. Pipe input, get structured JSON output, set timeouts, auto-approve tool calls. Built for scripts and pipelines."
+            title="Pipe everything."
+            description="Pipe text in as context, pipe images into video generation, chain commands together. Raw output on stdout when piped, file saves when interactive."
             bullets={[
-              "structured JSON output with token counts",
-              "timeout control for long-running tasks",
-              "force mode to skip confirmations",
+              "text stdin becomes prompt context",
+              "binary stdin for image-to-image and image-to-video",
+              "chain: ai image | ai video",
             ]}
             flip
-            window={<Panel rows={headlessrows} />}
+            window={<Panel rows={pipingrows} />}
           />
 
           <Spotlight
             tone="iron"
-            title="Any model, one key."
-            description="Switch between 50+ models from OpenAI, Anthropic, Google, and more through Vercel AI Gateway. Fuzzy matching means you never type a full model name."
+            title="Hundreds of models, one key."
+            description="Access text, image, and video models from OpenAI, Anthropic, Google, Black Forest Labs, ByteDance, and more through Vercel AI Gateway."
             bullets={[
-              "fuzzy model matching: sonnet, gpt, gemini",
-              "per-session model switching with /model",
-              "unified billing through one gateway",
+              "short names resolve automatically: flux-2-pro, gpt-5.5",
+              "live model listing from the gateway",
+              "per-type defaults configurable via env vars",
             ]}
             window={<Panel rows={modelrows} />}
           />
