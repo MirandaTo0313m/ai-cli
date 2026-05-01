@@ -13,15 +13,15 @@ export function Hero() {
             className="landing-fade-up text-5xl font-semibold tracking-tighter text-white sm:text-6xl md:text-7xl leading-[1.03]"
             style={{ animationDelay: "30ms" }}
           >
-            Your terminal, thinking.
+            Generate anything from your terminal.
           </h1>
           <p
             className="landing-fade-up mt-5 text-base text-[#888] leading-relaxed"
             style={{ animationDelay: "90ms" }}
           >
-            A minimal AI assistant that lives in your terminal. Read files, edit
-            code, run commands, and build faster with any model through one
-            interface.
+            A tiny CLI for generating text, images, and video with dead-simple
+            commands. Pipe content in and out. Compare models side by side. See
+            results inline.
           </p>
         </div>
 

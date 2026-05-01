@@ -22,41 +22,18 @@ const navigation = [
   {
     title: "Usage",
     items: [
-      {
-        type: "item" as const,
-        title: "Interactive Mode",
-        href: "/docs/interactive",
-      },
-      { type: "item" as const, title: "Single Message", href: "/docs/single" },
-      { type: "item" as const, title: "Headless Mode", href: "/docs/headless" },
+      { type: "item" as const, title: "Commands", href: "/docs/commands" },
       { type: "item" as const, title: "Models", href: "/docs/models" },
-    ],
-  },
-  {
-    title: "Features",
-    items: [
-      { type: "item" as const, title: "Tools", href: "/docs/tools" },
       {
         type: "item" as const,
-        title: "Slash Commands",
-        href: "/docs/commands",
+        title: "Piping & Output",
+        href: "/docs/single",
       },
-      { type: "item" as const, title: "Memory", href: "/docs/memory" },
-      { type: "item" as const, title: "Images", href: "/docs/images" },
-      { type: "item" as const, title: "Chat History", href: "/docs/history" },
-    ],
-  },
-  {
-    title: "Advanced",
-    items: [
-      { type: "item" as const, title: "Skills", href: "/docs/skills" },
-      { type: "item" as const, title: "MCP Servers", href: "/docs/mcp" },
       {
         type: "item" as const,
-        title: "Permissions",
-        href: "/docs/permissions",
+        title: "Inline Preview",
+        href: "/docs/images",
       },
-      { type: "item" as const, title: "Rules", href: "/docs/rules" },
     ],
   },
 ];

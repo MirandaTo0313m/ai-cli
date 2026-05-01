@@ -1,6 +1,6 @@
 ---
 title: Installation
-description: Install ai-cli globally and set up your API key.
+description: Install ai-cli and configure API access.
 order: 2
 ---
 
@@ -18,41 +18,57 @@ pnpm add -g ai-cli
 yarn global add ai-cli
 ```
 
-## Setup
+## API key
 
-<Steps>
-  <Step>
-    ### Get an API key
+ai-cli requires an API key for model access. Set one of the following environment variables:
 
-    Sign up at the [Vercel AI Gateway dashboard](https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai%2Fapi-keys&title=Go+to+AI+Gateway) and create a new key.
-  </Step>
-  <Step>
-    ### Run init
+<Properties>
+  <Property name="AI_GATEWAY_API_KEY" type="string">
+    Vercel AI Gateway key. Provides access to all supported models through a single key.
+  </Property>
+  <Property name="OPENAI_API_KEY" type="string">
+    Provider-specific key. Use if you only need OpenAI models.
+  </Property>
+</Properties>
 
-    ```bash
-    ai init
-    ```
+Get a gateway key from the [Vercel AI Gateway dashboard](https://vercel.com/docs/ai-gateway).
 
-    Paste your API key when prompted. It gets stored in `~/.ai-cli/config.json`.
-  </Step>
-  <Step>
-    ### Verify
+```bash
+export AI_GATEWAY_API_KEY="your-key"
+```
 
-    ```bash
-    ai "hello"
-    ```
+Add this to your shell profile (`~/.zshrc`, `~/.bashrc`, etc.) to persist across sessions.
 
-    If you see a response, you're ready to go.
-  </Step>
-</Steps>
+## Verify
+
+```bash
+ai text "hello"
+```
+
+If you see generated text, you're ready.
 
 ## Requirements
 
 <Properties>
-  <Property name="Node.js" type="18+" required>
-    ai-cli requires Node.js 18 or higher.
+  <Property name="Bun" type="1.0+" required>
+    ai-cli runs with Bun. Install from bun.sh.
   </Property>
   <Property name="API key" type="string" required>
-    A Vercel AI Gateway API key for model access.
+    A Vercel AI Gateway key or provider-specific key.
   </Property>
 </Properties>
+
+## Shell completions
+
+Enable tab completion for commands, flags, and model names:
+
+```bash
+# zsh (add to ~/.zshrc)
+eval "$(ai completions zsh)"
+
+# bash (add to ~/.bashrc)
+eval "$(ai completions bash)"
+
+# fish (add to ~/.config/fish/config.fish)
+ai completions fish | source
+```

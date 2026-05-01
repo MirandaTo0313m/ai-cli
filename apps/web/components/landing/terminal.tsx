@@ -16,74 +16,42 @@ interface scene {
 
 const scenes: readonly scene[] = [
   {
-    name: "interactive",
+    name: "image",
     data: [
-      { tone: "dim", text: "anthropic/claude-sonnet-4.5" },
-      { tone: "plain", text: "" },
-      { tone: "input", text: "› explain this codebase" },
-      { tone: "plain", text: "" },
-      { tone: "dim", text: "readFile package.json" },
-      { tone: "dim", text: "listDirectory src/" },
-      { tone: "dim", text: "readFile src/index.ts" },
-      { tone: "plain", text: "" },
       {
-        tone: "plain",
-        text: "This is a TypeScript monorepo with two packages:",
+        tone: "input",
+        text: '$ ai image "a sunset" -m "openai/gpt-image-2,bfl/flux-2-pro"',
       },
       { tone: "plain", text: "" },
-      {
-        tone: "plain",
-        text: "  apps/cli — the main CLI, built with esbuild",
-      },
-      {
-        tone: "plain",
-        text: "  packages/config — shared TypeScript config",
-      },
-      { tone: "plain", text: "" },
-      {
-        tone: "plain",
-        text: "It uses AI SDK 6.x with Vercel AI Gateway to connect",
-      },
-      {
-        tone: "plain",
-        text: "to any model through a single API key.",
-      },
+      { tone: "ok", text: "Saved to /Users/you/output-1.png (3.2s)" },
+      { tone: "ok", text: "Saved to /Users/you/output-2.png (4.1s)" },
     ],
   },
   {
-    name: "headless",
+    name: "video",
     data: [
-      { tone: "input", text: '$ ai -p "fix all type errors"' },
-      { tone: "dim", text: "anthropic/claude-sonnet-4.5" },
+      { tone: "input", text: '$ ai image "a dragon" | ai video "animate this"' },
+      { tone: "dim", text: "" },
+      { tone: "dim", text: "Generating image with openai/gpt-image-2" },
+      { tone: "ok", text: "Generating video with bytedance/seedance-2.0" },
       { tone: "plain", text: "" },
-      { tone: "ok", text: "readFile tsconfig.json" },
-      { tone: "ok", text: "searchInFiles 'as any' src/**/*.ts" },
-      { tone: "ok", text: "readFile src/utils/parse.ts" },
-      { tone: "ok", text: "editFile src/utils/parse.ts" },
-      { tone: "ok", text: "readFile src/hooks/stream.ts" },
-      { tone: "ok", text: "editFile src/hooks/stream.ts" },
-      { tone: "plain", text: "" },
-      { tone: "plain", text: "Fixed 4 type errors across 2 files." },
+      { tone: "ok", text: "Saved to /Users/you/output.mp4 (12.4s)" },
     ],
   },
   {
-    name: "tools",
+    name: "text",
     data: [
-      { tone: "dim", text: "anthropic/claude-sonnet-4.5" },
+      { tone: "input", text: "$ git diff | ai text \"explain these changes\"" },
+      { tone: "dim", text: "" },
+      { tone: "dim", text: "Generating text with openai/gpt-5.5" },
       { tone: "plain", text: "" },
-      { tone: "input", text: "› refactor the auth module" },
+      { tone: "plain", text: "These changes refactor the auth module:" },
       { tone: "plain", text: "" },
-      { tone: "ok", text: "findFiles src/auth/**" },
-      { tone: "ok", text: "readFile src/auth/index.ts" },
-      { tone: "ok", text: "readFile src/auth/session.ts" },
+      { tone: "plain", text: "  1. Splits session logic into its own file" },
+      { tone: "plain", text: "  2. Adds token expiry validation" },
+      { tone: "plain", text: "  3. Removes deprecated OAuth1 flow" },
       { tone: "plain", text: "" },
-      { tone: "plain", text: "I'll split auth into three files:" },
-      { tone: "plain", text: "" },
-      { tone: "dim", text: "  src/auth/validate.ts" },
-      { tone: "dim", text: "  src/auth/session.ts" },
-      { tone: "dim", text: "  src/auth/tokens.ts" },
-      { tone: "plain", text: "" },
-      { tone: "muted", text: "writeFile src/auth/validate.ts  allow? [y/n]" },
+      { tone: "ok", text: "Saved to /Users/you/output.md" },
     ],
   },
 ];
@@ -118,7 +86,7 @@ export function Terminal() {
       <div className="flex items-center justify-between border-b border-white/[0.06] bg-black/15 px-3 py-2">
         <div className="flex items-center gap-3 font-mono text-[11px] text-white/40 tabular-nums">
           <div>
-            mode <span className="text-white/70">{active.name}</span>
+            command <span className="text-white/70">ai {active.name}</span>
           </div>
         </div>
         <div className="flex items-center gap-2 font-mono text-[11px] text-white/40">
