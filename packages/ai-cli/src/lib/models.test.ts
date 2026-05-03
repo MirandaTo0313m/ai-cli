@@ -43,15 +43,15 @@ describe("resolveModels", () => {
 
   test("expands short names when knownModels provided", () => {
     const known = [
-      { id: "openai/gpt-image-1", creator: "openai", capabilities: ["image"] },
-      { id: "bfl/flux-2-pro", creator: "bfl", capabilities: ["image"] },
-    ] as const;
-    expect(
-      resolveModels("image", "gpt-image-1", known as never)
-    ).toEqual(["openai/gpt-image-1"]);
-    expect(
-      resolveModels("image", "flux-2-pro", known as never)
-    ).toEqual(["bfl/flux-2-pro"]);
+      { id: "openai/gpt-image-1" },
+      { id: "bfl/flux-2-pro" },
+    ];
+    expect(resolveModels("image", "gpt-image-1", known)).toEqual([
+      "openai/gpt-image-1",
+    ]);
+    expect(resolveModels("image", "flux-2-pro", known)).toEqual([
+      "bfl/flux-2-pro",
+    ]);
   });
 
   test("returns unknown short names as-is when no knownModels", () => {
@@ -59,10 +59,8 @@ describe("resolveModels", () => {
   });
 
   test("returns unknown short names as-is when not in knownModels", () => {
-    const known = [
-      { id: "openai/gpt-5", creator: "openai", capabilities: ["text"] },
-    ] as const;
-    expect(resolveModels("text", "nonexistent", known as never)).toEqual([
+    const known = [{ id: "openai/gpt-5" }];
+    expect(resolveModels("text", "nonexistent", known)).toEqual([
       "nonexistent",
     ]);
   });
@@ -90,14 +88,10 @@ describe("resolveModels multi", () => {
 
   test("expands short names in comma list", () => {
     const known = [
-      { id: "openai/gpt-image-1", creator: "openai", capabilities: ["image"] },
-      { id: "bfl/flux-2-pro", creator: "bfl", capabilities: ["image"] },
-    ] as const;
-    const result = resolveModels(
-      "image",
-      "gpt-image-1,flux-2-pro",
-      known as never
-    );
+      { id: "openai/gpt-image-1" },
+      { id: "bfl/flux-2-pro" },
+    ];
+    const result = resolveModels("image", "gpt-image-1,flux-2-pro", known);
     expect(result).toEqual(["openai/gpt-image-1", "bfl/flux-2-pro"]);
   });
 

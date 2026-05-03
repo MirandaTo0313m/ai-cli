@@ -116,6 +116,9 @@ export function registerImageCommand(program: Command) {
                 });
               }
             }
+            const creator = gatewayModels.all.find(
+              (m) => m.id === modelId
+            )?.creator;
             const result = await generateText({
               headers: {
                 "http-referer": "https://github.com/vercel-labs/ai-cli",
@@ -124,9 +127,10 @@ export function registerImageCommand(program: Command) {
               model: gateway(modelId),
               messages: [{ role: "user", content: messageContent }],
               abortSignal: abort,
-              providerOptions: {
-                google: { responseModalities: ["IMAGE", "TEXT"] },
-              },
+              providerOptions:
+                creator === "google"
+                  ? { google: { responseModalities: ["IMAGE", "TEXT"] } }
+                  : undefined,
             });
             const imageFile = result.files?.find((f) =>
               f.mediaType.startsWith("image/")

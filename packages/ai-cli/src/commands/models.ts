@@ -83,11 +83,7 @@ export function registerModelsCommand(program: Command) {
               (m) => m.creator.toLowerCase() === filterCreator
             );
           }
-          const grouped = groupByCreator(
-            entries.length !== section.entries.length
-              ? entries
-              : section.entries
-          );
+          const grouped = groupByCreator(entries);
           const count = [...grouped.values()].reduce(
             (s, m) => s + m.length,
             0

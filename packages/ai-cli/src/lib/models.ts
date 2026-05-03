@@ -49,7 +49,12 @@ interface RawGatewayModel {
 let cached: Promise<GatewayModels> | null = null;
 
 export function fetchGatewayModels(): Promise<GatewayModels> {
-  if (!cached) cached = doFetch();
+  if (!cached) {
+    cached = doFetch().catch((err) => {
+      cached = null;
+      throw err;
+    });
+  }
   return cached;
 }
 
@@ -130,6 +135,7 @@ async function doFetch(): Promise<GatewayModels> {
 
     result.all = [...entryMap.values()];
   } catch {
+    cached = null;
     process.stderr.write("Warning: could not fetch models from AI Gateway\n");
   }
 
@@ -139,7 +145,7 @@ async function doFetch(): Promise<GatewayModels> {
 export function resolveModels(
   modality: Modality,
   userModel?: string,
-  knownModels?: ModelEntry[]
+  knownModels?: Pick<ModelEntry, "id">[]
 ): string[] {
   if (!userModel) return [DEFAULTS[modality]];
   const models = userModel
@@ -150,7 +156,7 @@ export function resolveModels(
   return models.length > 0 ? models : [DEFAULTS[modality]];
 }
 
-function expandModelId(input: string, knownModels?: ModelEntry[]): string {
+function expandModelId(input: string, knownModels?: Pick<ModelEntry, "id">[]): string {
   if (input.includes("/")) return input;
   if (!knownModels) return input;
 
