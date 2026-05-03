@@ -1,8 +1,8 @@
-import { generateImage, gateway } from "ai";
+import { generateImage, generateText, gateway } from "ai";
 import type { Command } from "commander";
 
 import { buildJobs, runJobs } from "../lib/jobs.js";
-import { resolveModels } from "../lib/models.js";
+import { fetchGatewayModels, resolveModels } from "../lib/models.js";
 import { parsePositiveInt, parseSize, parseAspectRatio } from "../lib/parse.js";
 import { readStdin } from "../lib/stdin.js";
 
@@ -57,15 +57,17 @@ export function registerImageCommand(program: Command) {
         );
         process.exit(1);
       }
-      let imagePrompt: string | { images: Uint8Array[]; text?: string } =
-        prompt!;
+      let imagePrompt: string | { images: Uint8Array[]; text?: string };
       if (stdin) {
         imagePrompt = prompt
           ? { images: [new Uint8Array(stdin)], text: prompt }
           : { images: [new Uint8Array(stdin)] };
+      } else {
+        imagePrompt = prompt!;
       }
 
-      const models = resolveModels("image", opts.model);
+      const gatewayModels = await fetchGatewayModels();
+      const models = resolveModels("image", opts.model, gatewayModels.image);
       const countPerModel = opts.count
         ? parsePositiveInt(opts.count, "count")
         : 1;
@@ -90,6 +92,57 @@ export function registerImageCommand(program: Command) {
         jobs,
         async (modelId) => {
           const abort = AbortSignal.timeout(DEFAULT_TIMEOUT_MS);
+
+          if (gatewayModels.languageImageModelIds.has(modelId)) {
+            const messageContent: Array<
+              | { type: "text"; text: string }
+              | { type: "image"; image: Uint8Array }
+            > = [];
+            if (typeof imagePrompt === "string") {
+              messageContent.push({ type: "text", text: imagePrompt });
+            } else {
+              for (const img of imagePrompt.images) {
+                messageContent.push({ type: "image", image: img });
+              }
+              if (imagePrompt.text) {
+                messageContent.push({
+                  type: "text",
+                  text: imagePrompt.text,
+                });
+              } else {
+                messageContent.push({
+                  type: "text",
+                  text: "Generate an image",
+                });
+              }
+            }
+            const creator = gatewayModels.all.find(
+              (m) => m.id === modelId
+            )?.creator;
+            const result = await generateText({
+              headers: {
+                "http-referer": "https://github.com/vercel-labs/ai-cli",
+                "x-title": "ai-cli",
+              },
+              model: gateway(modelId),
+              messages: [{ role: "user", content: messageContent }],
+              abortSignal: abort,
+              providerOptions:
+                creator === "google"
+                  ? { google: { responseModalities: ["IMAGE", "TEXT"] } }
+                  : undefined,
+            });
+            const imageFile = result.files?.find((f) =>
+              f.mediaType.startsWith("image/")
+            );
+            if (!imageFile) {
+              throw new Error(
+                `Model ${modelId} did not return an image in the response`
+              );
+            }
+            return Buffer.from(imageFile.uint8Array);
+          }
+
           const result = await generateImage({
             headers: {
               "http-referer": "https://github.com/vercel-labs/ai-cli",

@@ -22,7 +22,7 @@ describe("cli integration", () => {
   test("--help exits 0 and lists subcommands", async () => {
     const { exitCode, stdout } = await run("--help");
     expect(exitCode).toBe(0);
-    for (const sub of ["text", "image", "video", "models", "completions"]) {
+    for (const sub of ["text", "image", "video", "models"]) {
       expect(stdout).toContain(sub);
     }
   });
@@ -31,31 +31,6 @@ describe("cli integration", () => {
     const { exitCode, stdout } = await run("--version");
     expect(exitCode).toBe(0);
     expect(stdout.trim()).toMatch(/^\d+\.\d+\.\d+/);
-  });
-
-  test("completions zsh exits 0 with valid output", async () => {
-    const { exitCode, stdout } = await run("completions", "zsh");
-    expect(exitCode).toBe(0);
-    expect(stdout).toContain("#compdef ai");
-    expect(stdout).toContain("--no-preview");
-  });
-
-  test("completions bash exits 0 with valid output", async () => {
-    const { exitCode, stdout } = await run("completions", "bash");
-    expect(exitCode).toBe(0);
-    expect(stdout).toContain("complete -F");
-  });
-
-  test("completions fish exits 0 with valid output", async () => {
-    const { exitCode, stdout } = await run("completions", "fish");
-    expect(exitCode).toBe(0);
-    expect(stdout).toContain("complete -c ai");
-  });
-
-  test("completions with invalid shell exits 1", async () => {
-    const { exitCode, stderr } = await run("completions", "powershell");
-    expect(exitCode).toBe(1);
-    expect(stderr).toContain("Unknown shell");
   });
 
   test("text with no prompt and no stdin exits 1", async () => {
