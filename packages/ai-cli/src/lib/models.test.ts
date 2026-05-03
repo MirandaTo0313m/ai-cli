@@ -158,7 +158,9 @@ describe("fetchGatewayModels", () => {
       "google/gemini-2.5-flash-image"
     );
     expect(result.image.map((m) => m.id)).toContain("openai/gpt-image-2");
-    expect(result.languageImageModelIds.has("google/gemini-2.5-flash-image")).toBe(true);
+    expect(
+      result.languageImageModelIds.has("google/gemini-2.5-flash-image")
+    ).toBe(true);
     expect(result.languageImageModelIds.has("openai/gpt-image-2")).toBe(false);
   });
 

@@ -70,9 +70,7 @@ export async function fetchGatewayModels(): Promise<GatewayModels> {
       }
     }
   } catch {
-    process.stderr.write(
-      "Warning: could not fetch models from AI Gateway\n"
-    );
+    process.stderr.write("Warning: could not fetch models from AI Gateway\n");
   }
 
   return result;
