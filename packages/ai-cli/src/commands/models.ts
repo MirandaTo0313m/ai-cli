@@ -84,10 +84,7 @@ export function registerModelsCommand(program: Command) {
             );
           }
           const grouped = groupByCreator(entries);
-          const count = [...grouped.values()].reduce(
-            (s, m) => s + m.length,
-            0
-          );
+          const count = [...grouped.values()].reduce((s, m) => s + m.length, 0);
           if (count === 0) continue;
           totalCount += count;
           process.stdout.write(`\n${section.title} models (${count}):\n`);

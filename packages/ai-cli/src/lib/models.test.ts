@@ -42,10 +42,7 @@ describe("resolveModels", () => {
   });
 
   test("expands short names when knownModels provided", () => {
-    const known = [
-      { id: "openai/gpt-image-1" },
-      { id: "bfl/flux-2-pro" },
-    ];
+    const known = [{ id: "openai/gpt-image-1" }, { id: "bfl/flux-2-pro" }];
     expect(resolveModels("image", "gpt-image-1", known)).toEqual([
       "openai/gpt-image-1",
     ]);
@@ -87,10 +84,7 @@ describe("resolveModels multi", () => {
   });
 
   test("expands short names in comma list", () => {
-    const known = [
-      { id: "openai/gpt-image-1" },
-      { id: "bfl/flux-2-pro" },
-    ];
+    const known = [{ id: "openai/gpt-image-1" }, { id: "bfl/flux-2-pro" }];
     const result = resolveModels("image", "gpt-image-1,flux-2-pro", known);
     expect(result).toEqual(["openai/gpt-image-1", "bfl/flux-2-pro"]);
   });

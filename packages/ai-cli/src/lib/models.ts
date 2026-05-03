@@ -102,7 +102,8 @@ async function doFetch(): Promise<GatewayModels> {
       }
 
       const creator =
-        m.owned_by ?? (m.id.slice(0, Math.max(0, m.id.indexOf("/"))) || "other");
+        m.owned_by ??
+        (m.id.slice(0, Math.max(0, m.id.indexOf("/"))) || "other");
 
       const pricing: ModelPricing | undefined =
         m.pricing?.input || m.pricing?.output || m.pricing?.image
@@ -156,7 +157,10 @@ export function resolveModels(
   return models.length > 0 ? models : [DEFAULTS[modality]];
 }
 
-function expandModelId(input: string, knownModels?: Pick<ModelEntry, "id">[]): string {
+function expandModelId(
+  input: string,
+  knownModels?: Pick<ModelEntry, "id">[]
+): string {
   if (input.includes("/")) return input;
   if (!knownModels) return input;
 
