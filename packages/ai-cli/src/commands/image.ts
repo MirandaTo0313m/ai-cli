@@ -93,17 +93,35 @@ export function registerImageCommand(program: Command) {
           const abort = AbortSignal.timeout(DEFAULT_TIMEOUT_MS);
 
           if (gatewayModels.languageImageModelIds.has(modelId)) {
-            const textPrompt =
-              typeof imagePrompt === "string"
-                ? imagePrompt
-                : imagePrompt.text ?? "Generate an image";
+            const messageContent: Array<
+              | { type: "text"; text: string }
+              | { type: "image"; image: Uint8Array }
+            > = [];
+            if (typeof imagePrompt === "string") {
+              messageContent.push({ type: "text", text: imagePrompt });
+            } else {
+              for (const img of imagePrompt.images) {
+                messageContent.push({ type: "image", image: img });
+              }
+              if (imagePrompt.text) {
+                messageContent.push({
+                  type: "text",
+                  text: imagePrompt.text,
+                });
+              } else {
+                messageContent.push({
+                  type: "text",
+                  text: "Generate an image",
+                });
+              }
+            }
             const result = await generateText({
               headers: {
                 "http-referer": "https://github.com/vercel-labs/ai-cli",
                 "x-title": "ai-cli",
               },
               model: gateway(modelId),
-              prompt: textPrompt,
+              messages: [{ role: "user", content: messageContent }],
               abortSignal: abort,
               providerOptions: {
                 google: { responseModalities: ["IMAGE", "TEXT"] },
