@@ -40,7 +40,7 @@ All commands support:
 --json                   Output metadata as JSON
 ```
 
-Model IDs can be specified as `provider/model-name` or just `model-name` (resolved against the known model list):
+Model IDs can be specified as `provider/model-name` or just `model-name` (resolved against models fetched from the gateway):
 
 ```bash
 ai text -m gpt-5.5 "hello"          # resolves to openai/gpt-5.5
@@ -82,17 +82,7 @@ ai image -m flux-2-pro "a sunset"   # resolves to bfl/flux-2-pro
 --json                   Output as JSON (includes descriptions)
 ```
 
-All model types (text, image, video) are fetched live from the AI Gateway. If the gateway is unreachable, all model types fall back to a built-in list.
-
-### completions
-
-Output a shell completion script for tab completion of commands, flags, and model names:
-
-```bash
-ai completions zsh    # add eval "$(ai completions zsh)" to ~/.zshrc
-ai completions bash   # add eval "$(ai completions bash)" to ~/.bashrc
-ai completions fish   # add ai completions fish | source to config.fish
-```
+All model types (text, image, video) are fetched live from the AI Gateway.
 
 ### Multi-Model Comparison
 

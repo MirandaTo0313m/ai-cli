@@ -1,8 +1,8 @@
-import { generateImage, gateway } from "ai";
+import { generateImage, generateText, gateway } from "ai";
 import type { Command } from "commander";
 
 import { buildJobs, runJobs } from "../lib/jobs.js";
-import { resolveModels } from "../lib/models.js";
+import { fetchGatewayModels, resolveModels } from "../lib/models.js";
 import { parsePositiveInt, parseSize, parseAspectRatio } from "../lib/parse.js";
 import { readStdin } from "../lib/stdin.js";
 
@@ -65,7 +65,8 @@ export function registerImageCommand(program: Command) {
           : { images: [new Uint8Array(stdin)] };
       }
 
-      const models = resolveModels("image", opts.model);
+      const gatewayModels = await fetchGatewayModels();
+      const models = resolveModels("image", opts.model, gatewayModels.image);
       const countPerModel = opts.count
         ? parsePositiveInt(opts.count, "count")
         : 1;
@@ -90,6 +91,35 @@ export function registerImageCommand(program: Command) {
         jobs,
         async (modelId) => {
           const abort = AbortSignal.timeout(DEFAULT_TIMEOUT_MS);
+
+          if (gatewayModels.languageImageModelIds.has(modelId)) {
+            const textPrompt =
+              typeof imagePrompt === "string"
+                ? imagePrompt
+                : imagePrompt.text ?? "Generate an image";
+            const result = await generateText({
+              headers: {
+                "http-referer": "https://github.com/vercel-labs/ai-cli",
+                "x-title": "ai-cli",
+              },
+              model: gateway(modelId),
+              prompt: textPrompt,
+              abortSignal: abort,
+              providerOptions: {
+                google: { responseModalities: ["IMAGE", "TEXT"] },
+              },
+            });
+            const imageFile = result.files?.find((f) =>
+              f.mediaType.startsWith("image/")
+            );
+            if (!imageFile) {
+              throw new Error(
+                `Model ${modelId} did not return an image in the response`
+              );
+            }
+            return Buffer.from(imageFile.uint8Array);
+          }
+
           const result = await generateImage({
             headers: {
               "http-referer": "https://github.com/vercel-labs/ai-cli",

@@ -2,7 +2,7 @@ import { generateText, gateway } from "ai";
 import type { Command } from "commander";
 
 import { buildJobs, runJobs } from "../lib/jobs.js";
-import { resolveModels } from "../lib/models.js";
+import { fetchGatewayModels, resolveModels } from "../lib/models.js";
 import type { OutputFormat } from "../lib/output.js";
 import { parsePositiveInt, parseTemperature } from "../lib/parse.js";
 import { readStdin, stdinAsText } from "../lib/stdin.js";
@@ -69,7 +69,8 @@ export function registerTextCommand(program: Command) {
       }
 
       const format = resolveFormat(opts.format);
-      const models = resolveModels("text", opts.model);
+      const gatewayModels = await fetchGatewayModels();
+      const models = resolveModels("text", opts.model, gatewayModels.text);
       const countPerModel = opts.count
         ? parsePositiveInt(opts.count, "count")
         : 1;

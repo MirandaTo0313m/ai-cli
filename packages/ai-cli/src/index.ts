@@ -2,7 +2,6 @@
 import { Command } from "commander";
 
 import pkg from "../package.json";
-import { registerCompletionsCommand } from "./commands/completions.js";
 import { registerImageCommand } from "./commands/image.js";
 import { registerModelsCommand } from "./commands/models.js";
 import { registerTextCommand } from "./commands/text.js";
@@ -21,7 +20,6 @@ registerTextCommand(program);
 registerImageCommand(program);
 registerVideoCommand(program);
 registerModelsCommand(program);
-registerCompletionsCommand(program);
 
 program.parseAsync(process.argv).catch((err: unknown) => {
   const msg = err instanceof Error ? err.message : String(err);

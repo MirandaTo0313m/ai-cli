@@ -2,7 +2,7 @@ import { experimental_generateVideo as generateVideo, gateway } from "ai";
 import type { Command } from "commander";
 
 import { buildJobs, runJobs } from "../lib/jobs.js";
-import { resolveModels } from "../lib/models.js";
+import { fetchGatewayModels, resolveModels } from "../lib/models.js";
 import {
   parsePositiveInt,
   parseAspectRatio,
@@ -65,7 +65,8 @@ export function registerVideoCommand(program: Command) {
           : { image: new Uint8Array(stdin) };
       }
 
-      const models = resolveModels("video", opts.model);
+      const gatewayModels = await fetchGatewayModels();
+      const models = resolveModels("video", opts.model, gatewayModels.video);
       const countPerModel = opts.count
         ? parsePositiveInt(opts.count, "count")
         : 1;
