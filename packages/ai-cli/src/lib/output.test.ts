@@ -1,6 +1,9 @@
-import { describe, expect, test } from "bun:test";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "fs";
+import { tmpdir } from "os";
+import { basename, join } from "path";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import { slugify, generateFilename } from "./output.js";
+import { slugify, generateFilename, writeOutput } from "./output.js";
 
 describe("slugify", () => {
   test("lowercases and replaces non-alphanumeric with hyphens", () => {
@@ -103,5 +106,160 @@ describe("generateFilename", () => {
   test("omits index when not provided", () => {
     const name = generateFilename("image", "a sunset");
     expect(name).toMatch(/^a-sunset-[0-9a-f]{4}\.png$/);
+  });
+});
+
+describe("writeOutput", () => {
+  let tmpDir: string;
+  let savedTTY: boolean | undefined;
+  let savedOutputDir: string | undefined;
+
+  beforeEach(() => {
+    tmpDir = join(tmpdir(), `ai-cli-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    mkdirSync(tmpDir, { recursive: true });
+    savedTTY = process.stdout.isTTY;
+    savedOutputDir = process.env.AI_CLI_OUTPUT_DIR;
+    delete process.env.AI_CLI_OUTPUT_DIR;
+    Object.defineProperty(process.stdout, "isTTY", { value: true, writable: true, configurable: true });
+  });
+
+  afterEach(() => {
+    rmSync(tmpDir, { recursive: true, force: true });
+    Object.defineProperty(process.stdout, "isTTY", { value: savedTTY, writable: true, configurable: true });
+    if (savedOutputDir !== undefined) {
+      process.env.AI_CLI_OUTPUT_DIR = savedOutputDir;
+    } else {
+      delete process.env.AI_CLI_OUTPUT_DIR;
+    }
+  });
+
+  test("writes to explicit output directory with prompt-derived name", async () => {
+    const data = Buffer.from("image-data");
+    const result = await writeOutput({
+      data,
+      format: "image",
+      outputPath: tmpDir,
+      prompt: "a sunset",
+      quiet: true,
+      display: false,
+    });
+
+    expect(result).not.toBeNull();
+    expect(result!.startsWith(tmpDir)).toBe(true);
+    expect(basename(result!)).toMatch(/^a-sunset-[0-9a-f]{4}\.png$/);
+    expect(readFileSync(result!).toString()).toBe("image-data");
+  });
+
+  test("writes to explicit file path", async () => {
+    const filePath = join(tmpDir, "my-file.png");
+    const data = Buffer.from("image-data");
+    const result = await writeOutput({
+      data,
+      format: "image",
+      outputPath: filePath,
+      quiet: true,
+      display: false,
+    });
+
+    expect(result).toBe(filePath);
+    expect(readFileSync(filePath).toString()).toBe("image-data");
+  });
+
+  test("inserts index into explicit file path with extension", async () => {
+    const filePath = join(tmpDir, "foo.png");
+    const data = Buffer.from("data");
+    const result = await writeOutput({
+      data,
+      format: "image",
+      outputPath: filePath,
+      index: 2,
+      quiet: true,
+      display: false,
+    });
+
+    expect(result).not.toBeNull();
+    expect(basename(result!)).toBe("foo-2.png");
+    expect(existsSync(result!)).toBe(true);
+  });
+
+  test("inserts index into extensionless path", async () => {
+    const filePath = join(tmpDir, "foo");
+    const data = Buffer.from("data");
+    const result = await writeOutput({
+      data,
+      format: "image",
+      outputPath: filePath,
+      index: 3,
+      quiet: true,
+      display: false,
+    });
+
+    expect(result).not.toBeNull();
+    expect(basename(result!)).toBe("foo-3");
+    expect(existsSync(result!)).toBe(true);
+  });
+
+  test("retries on filename collision via wx flag", async () => {
+    const allNames = Array.from({ length: 200 }, () =>
+      generateFilename("image", "collision")
+    );
+    const uniqueNames = new Set(allNames);
+    for (const name of uniqueNames) {
+      writeFileSync(join(tmpDir, name), "taken");
+    }
+
+    const data = Buffer.from("new-data");
+    const result = await writeOutput({
+      data,
+      format: "image",
+      outputPath: tmpDir,
+      prompt: "collision",
+      quiet: true,
+      display: false,
+    });
+
+    expect(result).not.toBeNull();
+    expect(result!.startsWith(tmpDir)).toBe(true);
+    expect(readFileSync(result!).toString()).toBe("new-data");
+  });
+
+  test("pipes to stdout when not a TTY", async () => {
+    Object.defineProperty(process.stdout, "isTTY", { value: false, writable: true, configurable: true });
+
+    const chunks: Buffer[] = [];
+    const origWrite = process.stdout.write.bind(process.stdout);
+    process.stdout.write = ((chunk: Uint8Array | string) => {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      return true;
+    }) as typeof process.stdout.write;
+
+    try {
+      const data = Buffer.from("piped-content");
+      const result = await writeOutput({
+        data,
+        format: "md",
+        quiet: true,
+        display: false,
+      });
+
+      expect(result).toBeNull();
+      expect(Buffer.concat(chunks).toString()).toBe("piped-content");
+    } finally {
+      process.stdout.write = origWrite;
+    }
+  });
+
+  test("accepts string data and writes as utf-8", async () => {
+    const filePath = join(tmpDir, "text-output.md");
+    const result = await writeOutput({
+      data: "hello world",
+      format: "md",
+      outputPath: filePath,
+      quiet: true,
+      display: false,
+    });
+
+    expect(result).toBe(filePath);
+    expect(readFileSync(filePath, "utf-8")).toBe("hello world");
   });
 });

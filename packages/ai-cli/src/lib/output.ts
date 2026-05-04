@@ -1,5 +1,5 @@
 import { randomBytes } from "crypto";
-import { existsSync, writeFileSync, mkdirSync, statSync } from "fs";
+import { writeFileSync, mkdirSync, statSync } from "fs";
 import { homedir } from "os";
 import { resolve, join, dirname } from "path";
 
@@ -66,16 +66,30 @@ function isDirectory(p: string): boolean {
   }
 }
 
-function findAvailablePath(
+function writeToDir(
   dir: string,
+  buf: Buffer,
   format: OutputFormat,
   prompt?: string,
-  index?: number
+  index?: number,
+  maxAttempts = 5
 ): string {
-  for (let attempt = 0; attempt < 5; attempt++) {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const name = generateFilename(format, prompt, index);
-    const candidate = resolve(dir, name);
-    if (!existsSync(candidate)) return candidate;
+    const filePath = resolve(dir, name);
+    try {
+      mkdirSync(dirname(filePath), { recursive: true });
+      writeFileSync(filePath, buf, { flag: "wx" });
+      return filePath;
+    } catch (err: unknown) {
+      if (
+        err instanceof Error &&
+        "code" in err &&
+        (err as NodeJS.ErrnoException).code === "EEXIST"
+      )
+        continue;
+      throw err;
+    }
   }
   throw new Error("Failed to generate a unique filename after 5 attempts");
 }
@@ -95,7 +109,7 @@ export async function writeOutput(
   if (effectiveOutput) {
     let filePath: string;
     if (isDirectory(effectiveOutput)) {
-      filePath = findAvailablePath(effectiveOutput, format, prompt, index);
+      filePath = writeToDir(effectiveOutput, buf, format, prompt, index);
     } else if (index != null) {
       const dot = effectiveOutput.lastIndexOf(".");
       if (dot === -1) {
@@ -105,11 +119,13 @@ export async function writeOutput(
           `${effectiveOutput.slice(0, dot)}-${index}${effectiveOutput.slice(dot)}`
         );
       }
+      mkdirSync(dirname(filePath), { recursive: true });
+      writeFileSync(filePath, buf);
     } else {
       filePath = resolve(effectiveOutput);
+      mkdirSync(dirname(filePath), { recursive: true });
+      writeFileSync(filePath, buf);
     }
-    mkdirSync(dirname(filePath), { recursive: true });
-    writeFileSync(filePath, buf);
     if (!quiet) process.stderr.write(`Saved to ${filePath}\n`);
     if (shouldDisplay) await showPreview(format, buf);
     return filePath;
@@ -120,14 +136,7 @@ export async function writeOutput(
     return null;
   }
 
-  const filePath = findAvailablePath(
-    DEFAULT_GENERATIONS_DIR,
-    format,
-    prompt,
-    index
-  );
-  mkdirSync(dirname(filePath), { recursive: true });
-  writeFileSync(filePath, buf);
+  const filePath = writeToDir(DEFAULT_GENERATIONS_DIR, buf, format, prompt, index);
   if (!quiet) process.stderr.write(`Saved to ${filePath}\n`);
   if (shouldDisplay) await showPreview(format, buf);
   return filePath;
