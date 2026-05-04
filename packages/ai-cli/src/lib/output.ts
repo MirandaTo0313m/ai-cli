@@ -1,4 +1,6 @@
+import { randomBytes } from "crypto";
 import { writeFileSync, mkdirSync, statSync } from "fs";
+import { homedir } from "os";
 import { resolve, join, dirname } from "path";
 
 import {
@@ -16,17 +18,36 @@ const DEFAULT_EXTENSIONS: Record<OutputFormat, string> = {
   video: ".mp4",
 };
 
+const DEFAULT_GENERATIONS_DIR = join(homedir(), ".ai-cli", "generations");
+const SLUG_MAX_LENGTH = 40;
+
 export interface WriteOutputOptions {
   data: Buffer | string;
   format: OutputFormat;
   outputPath?: string;
-  suffix?: string;
+  prompt?: string;
   quiet?: boolean;
   display?: boolean;
 }
 
-function defaultFilename(format: OutputFormat): string {
-  return `output${DEFAULT_EXTENSIONS[format]}`;
+export function slugify(input: string, maxLength = SLUG_MAX_LENGTH): string {
+  let slug = input
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  if (slug.length <= maxLength) return slug;
+
+  const truncated = slug.slice(0, maxLength);
+  const lastDash = truncated.lastIndexOf("-");
+  if (lastDash > 0) return truncated.slice(0, lastDash);
+  return truncated;
+}
+
+export function generateFilename(format: OutputFormat, prompt?: string): string {
+  const hex = randomBytes(2).toString("hex");
+  const slug = prompt ? slugify(prompt) : "output";
+  return `${slug}-${hex}${DEFAULT_EXTENSIONS[format]}`;
 }
 
 function isDirectory(p: string): boolean {
@@ -40,7 +61,7 @@ function isDirectory(p: string): boolean {
 export async function writeOutput(
   opts: WriteOutputOptions
 ): Promise<string | null> {
-  const { data, format, suffix, quiet, display } = opts;
+  const { data, format, prompt, quiet, display } = opts;
   const effectiveOutput = opts.outputPath ?? process.env.AI_CLI_OUTPUT_DIR;
   const buf = typeof data === "string" ? Buffer.from(data, "utf-8") : data;
   const shouldDisplay =
@@ -52,12 +73,9 @@ export async function writeOutput(
   if (effectiveOutput) {
     let filePath: string;
     if (isDirectory(effectiveOutput)) {
-      filePath = join(
-        effectiveOutput,
-        addSuffix(defaultFilename(format), suffix)
-      );
+      filePath = join(effectiveOutput, generateFilename(format, prompt));
     } else {
-      filePath = addSuffix(effectiveOutput, suffix);
+      filePath = effectiveOutput;
     }
     filePath = resolve(filePath);
     mkdirSync(dirname(filePath), { recursive: true });
@@ -72,13 +90,13 @@ export async function writeOutput(
     return null;
   }
 
-  const filename = addSuffix(defaultFilename(format), suffix);
-  const path = resolve(filename);
-  mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, buf);
-  if (!quiet) process.stderr.write(`Saved to ${path}\n`);
+  const filename = generateFilename(format, prompt);
+  const filePath = resolve(DEFAULT_GENERATIONS_DIR, filename);
+  mkdirSync(dirname(filePath), { recursive: true });
+  writeFileSync(filePath, buf);
+  if (!quiet) process.stderr.write(`Saved to ${filePath}\n`);
   if (shouldDisplay) await showPreview(format, buf);
-  return path;
+  return filePath;
 }
 
 async function showPreview(format: OutputFormat, buf: Buffer): Promise<void> {
@@ -87,11 +105,4 @@ async function showPreview(format: OutputFormat, buf: Buffer): Promise<void> {
   } else {
     displayImage(buf);
   }
-}
-
-function addSuffix(filename: string, suffix?: string): string {
-  if (!suffix) return filename;
-  const dot = filename.lastIndexOf(".");
-  if (dot === -1) return `${filename}-${suffix}`;
-  return `${filename.slice(0, dot)}-${suffix}${filename.slice(dot)}`;
 }
