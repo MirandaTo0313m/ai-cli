@@ -127,6 +127,7 @@ export async function runJobs(
           format,
           outputPath,
           prompt,
+          index: i + 1,
           quiet: true,
           display: false,
         });

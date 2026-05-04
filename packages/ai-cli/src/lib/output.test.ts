@@ -45,8 +45,8 @@ describe("slugify", () => {
     expect(slugify("!@#$%^&*()")).toBe("");
   });
 
-  test("handles unicode by stripping non-alphanumeric", () => {
-    expect(slugify("café résumé")).toBe("caf-r-sum");
+  test("handles unicode by normalizing accented characters", () => {
+    expect(slugify("café résumé")).toBe("cafe-resume");
   });
 
   test("preserves digits", () => {
@@ -88,5 +88,20 @@ describe("generateFilename", () => {
   test("handles empty prompt like undefined", () => {
     const name = generateFilename("image", "");
     expect(name).toMatch(/^output-[0-9a-f]{4}\.png$/);
+  });
+
+  test("falls back to 'output' when prompt slugifies to empty", () => {
+    const name = generateFilename("image", "!!!");
+    expect(name).toMatch(/^output-[0-9a-f]{4}\.png$/);
+  });
+
+  test("appends index when provided", () => {
+    const name = generateFilename("image", "a sunset", 3);
+    expect(name).toMatch(/^a-sunset-[0-9a-f]{4}-3\.png$/);
+  });
+
+  test("omits index when not provided", () => {
+    const name = generateFilename("image", "a sunset");
+    expect(name).toMatch(/^a-sunset-[0-9a-f]{4}\.png$/);
   });
 });
