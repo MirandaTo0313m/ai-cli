@@ -48,6 +48,8 @@ bun test
 
 <!-- Personal note: I tend to skip this step and regret it later. Don't skip it. -->
 
+<!-- Personal note: Also run `bun run typecheck` AND `bun test` together before marking anything done — I've been burned by fixing types and breaking tests (or vice versa) more than once. -->
+
 <!-- opensrc:start -->
 
 ## Source Code Reference
