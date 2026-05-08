@@ -38,6 +38,16 @@ bun run typecheck
 
 This runs `turbo run typecheck` across all workspaces and ensures no type errors have been introduced. Fix any type errors before moving on.
 
+## Testing
+
+Always run tests before considering a task complete:
+
+```sh
+bun test
+```
+
+<!-- Personal note: I tend to skip this step and regret it later. Don't skip it. -->
+
 <!-- opensrc:start -->
 
 ## Source Code Reference
