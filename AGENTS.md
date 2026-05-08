@@ -52,6 +52,8 @@ bun test
 
 <!-- Personal note: Run both with a single command to make it harder to forget one: `bun run typecheck && bun test` -->
 
+<!-- Personal note: If tests fail and you're not sure why, run `bun test --verbose` for more output — saved me a ton of time debugging silent failures. -->
+
 <!-- opensrc:start -->
 
 ## Source Code Reference
