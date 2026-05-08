@@ -54,6 +54,8 @@ bun test
 
 <!-- Personal note: If tests fail and you're not sure why, run `bun test --verbose` for more output — saved me a ton of time debugging silent failures. -->
 
+<!-- Personal note: If a test is consistently flaky, add a comment in the test file explaining why before disabling it — future me always forgets the context. -->
+
 <!-- opensrc:start -->
 
 ## Source Code Reference
