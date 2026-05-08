@@ -50,6 +50,8 @@ bun test
 
 <!-- Personal note: Also run `bun run typecheck` AND `bun test` together before marking anything done — I've been burned by fixing types and breaking tests (or vice versa) more than once. -->
 
+<!-- Personal note: Run both with a single command to make it harder to forget one: `bun run typecheck && bun test` -->
+
 <!-- opensrc:start -->
 
 ## Source Code Reference
